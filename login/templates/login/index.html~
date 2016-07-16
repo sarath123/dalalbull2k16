@@ -1,0 +1,93 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<!-- saved from url=(0051)http://getbootstrap.com/examples/starter-template/# -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
+    <title>Welcome | Dalalbull 15</title>
+    <!-- Bootstrap core CSS -->
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel='stylesheet prefetch' href='http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css'>
+    <link rel="stylesheet" href="{% static 'css/socialbtnstyle.css' %}">
+    </script>
+  </head>  
+  <body onload="start()">
+  <nav class="navbar navbar-fixed-top" id="header">
+     <div class="row">
+      <div class="col-sm-6">
+       <a href="http://www.dalalbull.excelmec.org/" target="_blank"><img class=" dimension2" src="{% static 'images/logo-mec.png' %}" border="0" ></a>
+      </div>
+      <div class="col-sm-6">
+       <a href="http://www.excelmec.org/" target="_blank"><img class="dimension1" src="{% static 'images/logo-npexcel.png' %}" border="0"></a>   
+      </div>
+    </div></nav>
+
+  
+     <div class="container-fluid" id="dbcont">
+      <div class="row" id="dbrow">
+      <div class="col-lg-12" id="dbcolumn">
+       <img id="dblogo"src="{% static 'images/logo-dalalbull_G.png' %}" border="0">
+       <div onclick="FBlogin()">
+       <a href="javascript: void(0);" class="fb" id="fbi"  >
+          <p id="vishigh">Login with FaceBook</p><p id="vislow">Login</p>
+          <i class="fa fa-facebook"></i>
+      </a>
+      </div></div>
+      </div>
+      </div> 
+
+
+<div class="Bubblediv">
+<ul class="bg-bubbles">
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+  </ul>
+ </div> 
+
+
+
+
+
+</div>
+      <div class="row" id="footerbtns">
+      <div class="col-xs-12">
+        <div id="footer">
+            <div class="social-buttons">
+                <a href="#" class="social-button facebook">
+                <i class="fa fa-facebook"></i></a>
+                <a href="#" class="social-button twitter">
+                <i class="fa fa-twitter"></i></a>
+                <a href="#" class="social-button google"><i class="fa fa-google"></i></a>
+            </div>
+            <h2 id="socialh2">© Excel 2015. All Rights Reserved</h2>
+            </div>
+
+      </div>
+      </div>
+    
+
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="{% static './js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/index.js' %}"></script>
+    <script src="{% static 'js/facebook.js' %}"></script>
+    
+      </body>

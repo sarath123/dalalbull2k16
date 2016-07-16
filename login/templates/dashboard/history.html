@@ -1,0 +1,209 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+  <link rel="shortcut icon" href="{% static 'images/title.png' %}" type="image/png">
+  <title>Transaction History | Dalalbull</title>
+
+    <!-- CSS -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
+  <link href="{% static 'css/style.css' %}" type="text/css" rel="stylesheet" media="screen,projection"/>
+
+  <!--<link href="{% static 'css/style.css' %}" type="text/css" rel="stylesheet" media="screen,projection"/>-->
+  <!--<link href="{% static 'css/bootstrap-tour-standalone.min.css' %}" rel="stylesheet"> -->
+<!--
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+  -->
+
+ 
+  
+
+       
+</head>
+<bodyonload="isLoggedin()"><!--red lighten-5">-->
+<!--"grey lighten-3"-->
+<header>
+
+  
+   <!--   
+
+      <ul id="nav-mobile" class="side-nav">
+        <li><a href="#">Navbar Link</a></li>
+      </ul>
+      <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+    </div>
+  </nav>
+
+
+  <div class="container"><a href="#" data-activates="nav-mobile" class="button-collapse side-nav full hide-on-large-only">
+  <i class="mdi-navigation-menu"></i></a></div>
+-->
+
+<ul id="slide-out" class="side-nav fixed colorcode  ">
+  <ul>
+  <div class="card no-margin">
+            <div class="card-image" style="background:#fff;height:150px;"> <!--F44336-->
+                <img src="{% static 'images/logo.png' %}" style="transform:scale(1.5);">
+              <!--<span class="card-title">DalalBull</span>-->
+            </div>
+            
+           
+          </div>
+  </ul>
+
+  <ul class="no-padding" style="margin-top:5px">  
+  <li  class="bold no-padding" ><a class="waves-effect waves-teal sidenava " href="../dashboard"><img class="tintu circle" src="{% static 'images/dashboard.svg' %}"> Dashboard</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../stockinfo"><img class="tintu circle" src="{% static 'images/pin.svg' %}">Stock Information</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../buy"><img class="tintu circle" src="{% static 'images/cart.svg' %}">Buy/Short Sell </a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../sell"><img class="tintu circle" src="{% static 'images/dollar.svg' %}">Sell/Short-Cover</a></li>
+  <li  class="bold no-padding" ><a class="waves-effect waves-teal sidenava " href="../pending"><img class="tintu circle" src="{% static 'images/086__empty.svg' %}">Pending Orders</a></li>
+  <li  class="bold title no-padding" style="background-color: #B31010;"><a class="waves-effect waves-teal sidenava white-text" href="../history"><img class="tintu circle" src="{% static 'images/briefcase-white.svg' %}">Transaction History</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../faq"><img class="tintu circle" src="{% static 'images/help.svg' %}">Help</a></li>
+  </ul>
+  <ul>
+          <div class="card no-margin">
+            <p style="font-weight:300;">Sponsored by:</p>
+            <div class="card-image" style="background:#fff;margin-top:2px"> <!--F44336-->
+                <a target="_blank" href="http://www.geojitbnpparibas.com"><img src="../static/images/sponsor.jpg" style="height:70px;transform:scale(0.7)"></a>
+              <!--<span class="card-title">DalalBull</span>-->
+            </div>
+            
+           
+          </div>
+  </ul>
+
+  </ul> 
+  <!--
+  <ul id="nav-mobile" class="side-nav fixed" style="width:240px;">
+
+  </ul>
+-->
+
+
+<nav class="top-nav colorcodetop"> <!--style="background:#D32F2F" -->
+        
+          <div class="nav-wrapper ">
+
+            <a href="#" data-activates="slide-out " class="button-collapse "><i class="mdi-navigation-menu"></i></a>
+            <a class="brand-logo lulu"><img src="{% static 'images/briefcase-white.svg' %}" class="tintu-header"><span class="nav-title_g ">Transaction History</span></a>
+
+            <ul id="nav-mobile" class="right hide-on-med-and-down ">
+            <li class=""><a href="#!" class=" disableClick"><img style="height:40px;width:40px;"src="https://graph.facebook.com/{{username}}/picture?redirect=true&height=32&width=32" class="circle propic"><span style="margin-left:17px;">{{name}}</span></a></li>
+            <li class="nameboard"><a href="#" data-activates='dropdown2' class="dropdown-button" style="padding:0"><i class="material-icons ">arrow_drop_down</i></a></li>
+           <!--<li><a href="#!" class="tooltipped" data-position="bottom" data-delay="50" data-tooltip="Logout"><i class="material-icons">input</i></a></li>-->
+            </ul>
+
+            <ul id="menu_but"class="right hide-on-large-only valign-wrapper"  >
+             
+             <li  class="valign "><a href="#" data-activates='dropdown1' class="dropdown-button"><i class="material-icons ">more_vert</i></a></li>
+            </ul>
+
+
+            <ul id='dropdown1' class='dropdown-content'>
+              
+              <li onclick="logout()"><a href="#!" class="orange-text">Logout</a></li>
+           </ul>
+           <ul id='dropdown2' class='dropdown-content'>
+              
+              <li onclick="logout()"><a href="#!" class="orange-text" >Logout</a></li>
+           </ul>
+
+       </div>
+
+      </nav>
+
+
+</header>
+
+<main>
+<canvas id="trian" style="z-index:-1"></canvas>
+{% if notrans %}
+<div class="container">
+  <div class="hide-on-small-only row" >
+    <div class="card " style="width:100px;background:rgba(0,0,0,0)">
+  </div>
+  </div>
+  <div class="card hoverable center">
+    <h3>Dalalbull 2015 has ended</h3>
+    <p>Thank you for participating.See you at Excel.</p>
+  </div>
+</div>
+{% else %}
+
+<div class="section"></div>
+<div class="section"></div>
+<div class="section"></div>
+
+<div style="margin-left : 5%; margin-right : 5%; background : #fff;">
+      <table class="bordered centered responsive-table z-depth-2">
+        <thead>
+          <tr>
+            <th data-field="id">Order no. </th>
+            <th data-field="name">Date & Time</th>
+            <th data-field="name">Company</th>
+            <th data-field="name">Type of Trade</th>
+            <th data-field="price">No. of Shares</th>
+            <th data-field="price">Cost per Share (₹)</th>
+            <th data-field="price">Total Value (₹)</th>
+          </tr>
+        </thead>
+
+        <tbody>
+   {% for i in history %}
+              <tr>
+              <td> {{i.ordnum}}</td>
+              <td>{{i.values.time}}</td>
+              <td>{{i.values.symbol}}</td>
+              <td>{{i.values.buy_ss}}</td>
+              <td>{{i.values.quantity}}</td>
+              <td>{{i.values.price}}</td>
+              <td>{{i.total}}</td></tr>
+    {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+</div>
+</main>
+ <footer class="page-footer">
+
+  </footer>
+
+
+  <!--  Scripts-->
+    <!--<script src="{% static 'js/jquery-2.1.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery.nicescroll.min.js' %}"></script> -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+  <script src="{% static 'js/facebook.js' %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.nicescroll/3.6.0/jquery.nicescroll.js"></script>
+  <script language="javascript" type="text/javascript" src="{% static 'js/history.js' %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/trianglify/0.2.0/trianglify.min.js"></script>
+<script>
+    var pattern = Trianglify(
+    {
+       // width: window.innerWidth,
+       // height: window.innerHeight
+       variance:0.7,
+       cell_size:30 ,
+       x_colors: 'YlOrRd',
+       y_colors: 'match_x',
+    });
+  pattern.canvas(document.getElementById('trian'));
+//    document.body.appendChild()
+</script>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66440025-1', 'auto');
+  ga('send', 'pageview');
+
+  </script>
+  
+</body>
+</html>

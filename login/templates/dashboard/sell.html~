@@ -1,0 +1,214 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="minimum-width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="description" content="Dalalbull- Stock market simulation game.">
+  <meta name="author" content="">
+  <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
+
+  <title>Sell/Short Cover | Dalalbull</title>
+
+  <link href="{% static 'css/style.default.css' %}" rel="stylesheet">
+  <link href="{% static 'css/jquery.datatables.css' %}" rel="stylesheet"> 
+<link href="{% static 'css/social.css' %}" rel="stylesheet"> 
+
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+  <script src="js/html5shiv.js"></script>
+  <script src="js/respond.min.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+<div class="main_container">
+
+
+<!-- Preloader -->
+<div id="preloader">
+    <div id="status"><img src="{% static 'images/loader.gif' %}"></div>
+</div>
+ 
+<div class="headerlogo">
+    <a class="logodeck" > 
+	 <div class="pull-left" >
+        <a href="http://www.dalalbull.excelmec.org/" target="_blank"><img class=" dimension2" src="images/logo-dalalbull.png" border="0" class="img-responsive" alt="Responsive image"></a>
+      </div>
+	  <div class="pull-right npexcel" >
+        <a href="http://www.excelmec.org/" target="_blank"><img class=" dimension1" src="{% static 'images/logo-npexcel.png' %}" border="0" class="img-responsive" alt="Responsive image"></a>
+      </div>
+	</a>
+ </div>
+ 
+ <section> 
+ 
+  <div class="leftpanel">
+  
+ 
+    <div class="leftpanelinner">          
+      <h5 class="sidebartitle">Navigation</h5>
+      <ul class="nav nav-pills nav-stacked nav-bracket">
+        <li><a href="dashboard.php"><i class="fa fa-dashboard"></i> <span>Dashboard</span></a></li>
+        <li><a href="stockinfo.php"><i class="fa fa-money"></i> <span>Stock Information</span></a></li>
+        <li><a href="buy_ss.php"><i class="fa fa-suitcase"></i> <span>Buy/Short Sell</span></a></li>
+        <li class="active"><a href="sell_sc.php"><i class="fa fa-suitcase"></i> <span>Sell/Short Cover</span></a></li>
+        <li><a href="history.php"><i class="fa fa-th-list"></i> <span>Transaction History</span></a></li>
+        <li><a href="news.php"><i class="fa fa-rss"></i> <span>Stock Market News</span></a></li>
+        <li><a href="help.php"><i class="fa fa-question-circle"></i> <span>Help</span></a></li>  
+         </ul>	
+
+<div class="infosummary">
+      </div>		
+    </div><!-- leftpanelinner -->
+  </div><!-- leftpanel -->
+
+
+  <div class="mainpanel">
+    
+  <div class="headerbar"> 
+      <a class="menutoggle"><i class="fa fa-bars"></i></a>
+      <div class="header-right">
+        <ul class="headermenu">              
+        <li>
+		 
+              <div class="dropdown-toggle" >
+              </div>
+   
+          </li>
+        <li>
+            <a class="logout" href="logout.php">
+                <i class="fa fa-power-off "></i>
+            </a>
+        </li>
+	</ul>
+   </div><!-- header-right -->
+      
+    </div><!-- headerbar -->
+	
+	
+    <div class="pageheader">
+      <h2><i class="fa fa-suitcase"></i> Sell/Short Cover <span class="npexcel">Perform Sell and Short Cover operations</span></h2>
+      <div class="breadcrumb-wrapper">
+        <span class="label">You are here:</span>
+        <ol class="breadcrumb">
+          <li><a href="dashboard.php">Dalalbull</a></li>
+          <li class="active">Sell/Short Cover</li>
+        </ol>
+      </div>
+    </div>
+	   
+	
+ <div class="contentpanel">
+	
+	<div class="panel panel-default">
+	<div class="panel-heading npexcel">
+
+            
+              <p>‣  Please do not use backspace or change the page while the transaction is in process, it may lead to loss of sale value.<br> ‣  Avoid switching pages too fast which may lead to automatic logout.</p>
+            </div>
+  <div class="panel-body">
+  	{% if cclose %}
+  	{{time}}
+  	    <center><h4 class='dark'>You cannot trade now</h4></center> 
+            <center><h4 class='dark'>Trading time is between 9:15 & 15:30 from Monday to Friday</h4></center>
+            <center><h4 class='dark'>No trading on Saturdays & Sundays</h4></center>  
+	{% else %}  
+	{% if no_stock %} 
+		<center><h4 class='dark'>You have no Stock Holdings to sell</h4></center>
+	{% else %}       
+      <div id="sellDiv" class='table-responsive'>
+      <table id="sellList" class='table table-striped'>
+      <thead><tr>
+      <th>Company</th>
+      <th>Type of Trade</th>
+      <th>Shares in Hand</th>
+      <th>Current Price (₹)</th>
+      <th>Gain % per Share</th>
+      <th>Trade <span style=\"font-size:12px;\">(Use Pending price to make a pending order)</span></th>
+      </tr></thead><tbody>
+      {% for i in trans %}
+      {{i.tr|safe}}
+      {% endfor %}
+      {% endif %}
+      </table>
+      </div>
+      <div id="soldBanner" style="text-align:center;display:none;">
+        <h4 class='dark'>Processing your Transaction</h4>
+      </div>
+    </div>
+	{% if symbols  %}
+          <script type="text/javascript">
+            var symbols = {{ data|safe }}
+          </script>
+	{% endif %}
+  </div>
+  </div>
+  </div>
+ 
+  
+ </section> 
+ {% endif %}
+<div class="headerlogo">
+<div class="row">
+<section>
+  <ul id="services">
+    <li>
+	<a href="https://www.facebook.com/excelmec" target="_blank" style="text-decoration:none;">
+      <div class="entypo-facebook"></div>
+</a>
+    </li>
+    <li>
+	<a href="https://twitter.com/excelmec" target="_blank" style="text-decoration:none;">
+      <div class="entypo-twitter"></div>
+  </a>
+    </li>
+    <li>
+	<a href="https://plus.google.com/115187532143754007288" target="_blank" style="text-decoration:none; ">
+      <div class="entypo-gplus"></div>
+	  </a>
+    </li>
+	<h2>© Excel 2014. All Rights Reserved</h2>
+  </ul>
+   </section>
+ </div>
+    </div>
+
+	
+	<!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>-->
+<script src="{% static 'js/jquery-1.10.2.min.js' %}"></script>
+<script src="{% static 'js/jquery-migrate-1.2.1.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="{% static 'js/modernizr.min.js' %}"></script>
+<script src="{% static 'js/jquery.sparkline.min.js' %}"></script>
+<script src="{% static 'js/toggles.min.js' %}"></script>
+<script src="{% static 'js/retina.min.js' %}"></script>
+<script src="{% static 'js/jquery.cookies.js' %}"></script>
+
+<script language="javascript" type="text/javascript" src="{% static 'js/sell_sc.js' %}"></script>
+
+<script src="{% static 'js/raphael-2.1.0.min.js' %}"></script>
+<script src="{% static 'js/prefixfree.min.js' %}"></script>
+
+<script src="{% static 'js/jquery.datatables.min.js' %}"></script>
+<script src="{% static 'js/chosen.jquery.min.js' %}"></script>
+
+<script src="{% static 'js/custom.js' %}"></script>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-54779727-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</div>
+</body>
+</html>
+<?php } ?>

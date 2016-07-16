@@ -1,0 +1,249 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+  <title>Stockinfo | Dalalbull</title>
+
+  <!-- CSS  -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
+  <link href="{% static 'css/style.css' %}" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+
+
+       
+</head>
+<body style="background-color:#E5c9b5"><!--red lighten-5">-->
+<!--"grey lighten-3"-->
+<header>
+
+<ul id="slide-out" class="side-nav fixed colorcode  ">
+  <ul>
+  <div class="card no-margin">
+            <div class="card-image" style="background:#fff;height:150px;"> <!--F44336-->
+                <img src="{% static 'images/logo.png' %}" style="transform:scale(1.5);">
+              <!--<span class="card-title">DalalBull</span>-->
+            </div>
+            
+           
+          </div>
+  </ul>
+
+  <ul class="no-padding" style="margin-top:5px">  
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava " href="../dashboard"><img class="tintu circle" src="{% static 'images/dashboard.svg' %}"> Dashboard</a></li>
+  <li  class="bold no-padding" style="background-color:#B31010;"><a class="waves-effect waves-teal sidenava white-text" href="../stockinfo"><img class="tintu circle" src="{% static 'images/pin-white.svg' %}">Stock Information</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../buy"><img class="tintu circle" src="{% static 'images/cart.svg' %}">Buy/Short Sell </a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../sell"><img class="tintu circle" src="{% static 'images/dollar.svg' %}">Sell/Short Cover</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../pending"><img class="tintu circle" src="{% static 'images/086__empty.svg' %}">Pending Orders</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../history"><img class="tintu circle" src="{% static 'images/briefcase.svg' %}">Transaction History</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="#!"><img class="tintu circle" src="{% static 'images/help.svg' %}">Help</a></li>
+  </ul>
+  </ul> 
+  <!--
+  <ul id="nav-mobile" class="side-nav fixed" style="width:240px;">
+
+  </ul>
+-->
+
+
+<nav class="top-nav colorcodetop"> <!--style="background:#D32F2F" -->
+        
+          <div class="nav-wrapper ">
+
+            <a href="#" data-activates="slide-out " class="button-collapse "><i class="mdi-navigation-menu"></i></a>
+            <a class="brand-logo lulu"><img src="{% static 'images/pin-white.svg' %}" class="tintu-header"><span class="nav-title_g ">Stock Information</span></a>
+
+            <ul id="nav-mobile" class="right hide-on-med-and-down ">
+            <li class=""><a href="#!" class=" disableClick"><img style="height:40px;width:40px;"src="https://graph.facebook.com/{{user_id}}/picture?redirect=true&height=32&width=32" class="circle propic"><span style="margin-left:17px;">{{username}}</span></a></li>
+            <li class="nameboard"><a href="#" data-activates='dropdown2' class="dropdown-button" style="padding:0"><i class="material-icons ">arrow_drop_down</i></a></li>
+           <!--<li><a href="#!" class="tooltipped" data-position="bottom" data-delay="50" data-tooltip="Logout"><i class="material-icons">input</i></a></li>-->
+            </ul>
+
+            <ul id="menu_but"class="right hide-on-large-only valign-wrapper"  >
+             
+             <li  class="valign "><a href="#" data-activates='dropdown1' class="dropdown-button"><i class="material-icons ">more_vert</i></a></li>
+            </ul>
+
+
+            <ul id='dropdown1' class='dropdown-content orange-text'>
+             
+              <li><a href="#!" class="orange-text">Help</a></li>
+              <li class="divider"></li>
+              <li><a href="#!" onclick="logout()" class="orange-text">Logout</a></li>
+           </ul>
+           <ul id='dropdown2' class='dropdown-content orange-text'>
+             
+              <li><a href="#!" class="orange-text">Help</a></li>
+              <li class="divider"></li>
+              <li><a href="#!" onclick="logout()" class="orange-text">Logout</a></li>
+           </ul>
+
+       </div>
+
+      </nav>
+
+
+</header>
+
+<main>
+
+<canvas id="trian" style="z-index:-1"></canvas>
+
+<div class="row" style="margin-top:5%;margin-bottom:5%;">
+  <div class="col s10" style="float:none;margin:0 auto;">
+    <a class='dropdown-button2 btn' style="width:100%;" id="compselbut"href='#' data-activates='dropdown3'>Choose A Company</a>
+
+    <!-- Dropdown Structure -->
+    <ul id='dropdown3' class='dropdown-content ' >
+    {% for i in companies %}
+    <li><a href="#!" class="deep-orange-text company">{{i.symbol}}</a></li>
+    {% endfor %}
+  </ul>
+  </div>
+</div>
+
+  <div class="row"style="margin:0 2%" >
+
+    <div class="col m5 hide-on-small-only" style="margin-top:80px;">
+
+
+
+  <div id="curve_chart" class="white"style="width:100%;height:100%;">  
+
+       
+
+    <div class="card  small no-margin valign-wrapper" id="graphloader">
+          
+              <!--<span class="card-title">Graph</span>
+              <p>Nifty-Graph</p>-->
+
+
+              
+      
+              
+
+
+    <div class="preloader-wrapper big active valign" style="margin:auto" id="preloader" >
+     <div class="spinner-layer spinner-blue">
+        <div class="circle-clipper left">
+          <div class="circle"></div>
+        </div><div class="gap-patch">
+          <div class="circle"></div>
+        </div><div class="circle-clipper right">
+          <div class="circle"></div>
+        </div>
+      </div>
+
+      <div class="spinner-layer spinner-red">
+        <div class="circle-clipper left">
+          <div class="circle"></div>
+        </div><div class="gap-patch">
+          <div class="circle"></div>
+        </div><div class="circle-clipper right">
+          <div class="circle"></div>
+        </div>
+      </div>
+
+      <div class="spinner-layer spinner-yellow">
+        <div class="circle-clipper left">
+          <div class="circle"></div>
+        </div><div class="gap-patch">
+          <div class="circle"></div>
+        </div><div class="circle-clipper right">
+          <div class="circle"></div>
+        </div>
+      </div>
+
+      <div class="spinner-layer spinner-green">
+        <div class="circle-clipper left">
+          <div class="circle"></div>
+        </div><div class="gap-patch">
+          <div class="circle"></div>
+        </div><div class="circle-clipper right">
+          <div class="circle"></div>
+        </div>
+      </div>
+</div>
+
+
+
+ </div>
+
+
+ </div>
+    </div>
+    <div class="z-depth-2 card col s6  right buySellCard center " id="cheruth2" style="margin-top:-15px;" >
+
+<h5 style="font-weight:500;" >Stock Information</h5>
+
+<table class="striped centered" id="trans_det_table">
+  <tr>
+    <th>Company:</th>
+    <td id="company_name"></td>
+  </tr>
+  <tr>
+    <th>Open (₹):</th>
+    <td id="open"></td>
+  </tr>
+  <tr>
+    <th>High (₹): </th>
+    <td id="high"></td>
+  </tr>
+  <tr>
+    <th>Low (₹): </th>
+    <td id="low"></td>
+  </tr>
+  <tr>
+    <th>Current Price (₹): </th>
+    <td id="current_price"></td>
+  </tr>
+  <tr>
+    <th>Change (₹): </th>
+    <td id="change"></td>
+  </tr>
+  <tr style="" id="marginparent">
+    <th>% Change: </th>
+    <td id="change_per"></td>
+  </tr>
+  <tr>
+    <th>Trade Qty (Lacs): </th>
+    <td id="qty"></td>
+  </tr>
+  <tr>
+    <th>Trade Value (Crores): </th>
+    <td id="trdval"></td>
+  </tr>
+
+</table>
+</div>
+
+  </div>
+
+
+
+</main>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+ <script src="http://174.36.220.83:8021/socket.io/socket.io.js"></script>
+ <script src="{% static 'js/stockinformationjs.js' %}"></script>
+ <!-- nicescroll-->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.nicescroll/3.6.0/jquery.nicescroll.js"></script>>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/trianglify/0.2.0/trianglify.min.js"></script>
+ <script>
+     var pattern = Trianglify(
+     {
+        // width: window.innerWidth,
+        // height: window.innerHeight
+        variance:0.7,
+        cell_size: 40,
+        x_colors: 'YlOrRd',
+        y_colors: 'match_x',
+     });
+    pattern.canvas(document.getElementById('trian'));
+ //    document.body.appendChild()
+ </script>
+      
+  </body>
+</html>

@@ -1,0 +1,23 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Error 404</title>
+	<link rel="stylesheet" type="text/css" href="{% static '404/css/style.css' %}">
+</head>
+<body style="overflow:hidden">
+
+<div class="error">
+	<p class="text">Error 404 !!!</p>
+</div>
+
+<div class="pikart">
+	<img src="{% static 'images/error.svg' %}" class="svg">
+</div>
+
+<p class="tag-line">Either we broke something, or you can't type!</p>
+<h6 class="tag-line">Check the url and be patient</h6>
+
+
+</body>
+</html>

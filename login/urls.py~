@@ -1,0 +1,17 @@
+from django.conf.urls import url
+
+from . import views
+
+urlpatterns = [
+	url(r'^$', views.index, name='index'),
+	url(r'^login$', views.login, name='login'),
+	url(r'^dashboard$', views.dashboard, name='dashboard'),
+	url(r'^faq$', views.faq, name='faq'),	
+	url(r'^buy$', views.buy, name='buy'),
+	url(r'^sell$', views.sell, name='sell'),	
+	url(r'^submit_buy$', views.submit_buy, name='submit'),
+	url(r'^submit_sell$', views.submit_sell, name='submit'),				
+	url(r'^currPrice$', views.currPrice, name='currentPrice'),		
+	url(r'^leaderboard$', views.leaderboard, name='leaderboard'),		
+	url(r'^sell_trend$', views.sell_trend, name='sell_trend'),				
+]

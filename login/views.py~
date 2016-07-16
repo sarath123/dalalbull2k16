@@ -1,0 +1,535 @@
+from django.core.serializers.json import DjangoJSONEncoder
+from django.views.decorators.csrf import ensure_csrf_cookie,csrf_exempt
+from django.http import HttpResponse,HttpResponseForbidden
+from django.shortcuts import redirect,render_to_response
+import urllib2
+import json
+import datetime
+import re
+from .models import User
+from django.template import RequestContext, loader
+from .models import User,Portfolio,Stock_data,Transaction,History,Pending
+#======Index Page======#
+@ensure_csrf_cookie
+def index(request):
+	context=RequestContext(request)
+	template=loader.get_template('login/index.html')
+	request.session['login']=1
+	return HttpResponse(template.render(context))
+
+#======Login======#
+@ensure_csrf_cookie
+def login(request):
+	context=RequestContext(request)
+	if(request.session['login']==1):
+		u = User(user_id=request.POST['username'], first_name=request.POST['firstname'], last_name=request.POST['lastname'], email=request.POST['email'],)
+		u.save()
+		try:
+			p = Portfolio.objects.get(user_id=request.POST['username'])
+		except Portfolio.DoesNotExist :
+			p = Portfolio(user_id=request.POST['username'],net_worth=1000000.00,cash_bal=1000000.00)
+			p.save()
+		request.session['username'] = request.POST['username']
+		request.session['login']=0
+		request.session['dashboard']=1
+		return HttpResponse('success');
+	return  redirect('index')
+
+#======Dashboard======#
+@ensure_csrf_cookie
+def dashboard(request):
+	context=RequestContext(request)
+	if(request.session['dashboard']==1):
+		request.session['dashboard']=0
+		request.session['faq']=1
+		request.session['buy']=1
+		request.session['sell']=1
+		template=loader.get_template('dashboard/dashboard.html')
+		return render_to_response('dashboard/dashboard.html',)
+	return  redirect('index')
+	
+	
+#======FAQ======#
+@ensure_csrf_cookie
+def faq(request):                            
+	if(request.session['faq']==1):
+		request.session['faq']=0
+		context=RequestContext(request)
+		template=loader.get_template('faq/faq.html')
+		return HttpResponse(template.render(context))
+	return  HttpResponseForbidden("Access Denied")
+
+#======Buy/Short-Sell======#
+@ensure_csrf_cookie
+def buy(request):						
+	if(request.session['buy']==1):
+		request.session['buy']=0
+		context=RequestContext(request)	
+		cclose=True
+		now = datetime.datetime.now()
+ 		if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
+			start_time=datetime.time(hour=9,minute=15,second=00)
+			end_time=datetime.time(hour=15,minute=30,second=00)
+			now = datetime.datetime.now().time()
+			if(start_time<now<end_time):
+				cclose=False
+		try:
+			p = Portfolio.objects.get(user_id=request.session['username'])
+		except Portfolio.DoesNotExist :
+			print("error")
+		try:
+			stocks=Stock_data.objects.all()
+			companies=[]
+			for c in stocks:
+				companies.append(c)
+		except Stock_data.DoesNotExist :
+			print "error"
+		return render_to_response('dashboard/buy.html',{'username': request.session['username'],'companies': companies ,'cclose' : cclose,'time' : datetime.datetime.now(),})
+	return redirect('index')
+
+#======Submit-Buy======#
+@ensure_csrf_cookie
+def submit_buy(request):
+	quantity_invalid=False
+	msg=""
+	data=request.POST
+	if(len(data)!=0):
+		qnty_test = data['quantity']
+		if(not is_number(qnty_test)):
+			quantity_invalid=True
+		else:
+			qnty_test=int(float(data['quantity']))
+			if(qnty_test <= 0):
+				quantity_invalid=True
+		if(not quantity_invalid):
+			company=data['company'] 
+			if(company != "none" and company !="" ):
+				quantity=qnty_test
+				if (is_number(data['pending'])):
+					pending_price=float(data['pending'])
+				else :
+					pending_price=""
+				if (data['b_ss'] == 'Buy' or data['b_ss'] == 'Short Sell'):
+					b_ss=data['b_ss']
+				else:
+					b_ss = ""	
+				try :
+					stocks=Stock_data.objects.get(symbol=company)					
+					portfolio = Portfolio.objects.get(user_id=request.session['username'])
+					old_cash_bal = float(portfolio.cash_bal)
+					current_price=float(stocks.current_price)
+					no_trans = portfolio.no_trans
+			   		if(no_trans+1<=100):
+			    			brokerage=((0.5/100)*current_price)*float(quantity)	
+			   		else :
+
+			   			if(no_trans+1<=1000):			   			
+			    				brokerage=((1/100)*current_price)*float(quantity)
+			   			else :			   			
+			    				brokerage=((1.5/100)*current_price)*float(quantity)
+			   		if(quantity_invalid):
+						msg= "<strong>Invalid Data</strong><br><br>"
+			   		else : 			   				
+			   			if((pending_price!="") and current_price!=pending_price):
+					    		percentager = 0.05 * current_price
+					    		t=current_price-percentager
+					    		l=current_price+percentager
+					    		q=False
+					    		if(pending_price > current_price or pending_price <= t ):
+					    			q=True
+					    		r=False
+					    		if(pending_price < current_price or pending_price >= l ):
+					    			r=True
+
+			    				if(not is_number(pending_price) or pending_price<0):			   				 						msg= "<strong>Invalid Data</strong><br><br>"										    				
+			    				else:
+			    			 		if(b_ss=='Buy' and q):			    
+			     						msg= "<strong>Pending Price for Buying should be less than and maximum of 5% below Current Price</strong><br><br>"
+								else:
+		    							if(b_ss=="Short Sell" and r):
+		     								msg= "<strong>Pending Price for Short Selling should be greater than and maximum of 5% above Current Price</strong><br><br>"
+			    						else:
+			     							p=Pending(user_id=request.session['username'],symbol=company,buy_ss=b_ss,quantity=quantity,value=pending_price,time=datetime.datetime.now().time())
+			     							p.save()
+			     			     				msg= "<strong>You have made a Pending Order to "+b_ss+" "+str(quantity)+" shares of '"+company+"' at a Desired Price of'"+'&#8377;'+str(pending_price)+"</strong><br><br>"
+						else:
+							if(((old_cash_bal-float(portfolio.margin)-brokerage)<=0 or (old_cash_bal-float(portfolio.margin)-brokerage)< current_price*float(quantity) and b_ss=="Buy") or ((old_cash_bal-float(portfolio.margin)-brokerage < current_price*float(quantity))/2) and b_ss=="Short Sell"):
+								msg= "<strong>You do not have enough Cash Balance for this transaction</strong><br><br>"
+							else:
+								try:
+									t=Transaction.objects.get(user_id=request.session['username'],symbol=company,buy_ss=b_ss)
+									old_quantity=float(t.quantity)
+									old_val=float(t.value)
+									new_val=old_val+(float(quantity)*current_price)
+									new_quantity=old_quantity+float(quantity)
+									t.quantity=new_quantity
+									t.value=new_val
+									t.buy_ss=b_ss
+									t.save()
+								except Transaction.DoesNotExist:
+									new_val=float(quantity)*current_price
+									t=Transaction(user_id=request.session['username'],symbol=company,buy_ss=b_ss,quantity=quantity,value=new_val)
+									t.save()
+						    		if(b_ss=="Buy"):
+						     			cash_bal=old_cash_bal-(float(quantity)*current_price)
+						     			margin = float(portfolio.margin)
+			   			 		else:
+			   			 			if(b_ss=="Short Sell"):
+			     							cash_bal = old_cash_bal
+										margin=float(portfolio.margin)+(float(quantity)*current_price)/2
+						    		cash_bal -=brokerage
+						    		no_trans+=1
+								portfolio.cash_bal=cash_bal
+								portfolio.margin=margin
+								portfolio.no_trans=no_trans
+								portfolio.save()
+								history=History(user_id=request.session['username'],time=datetime.datetime.now().time(),symbol=company,buy_ss=b_ss,quantity=quantity,price=stocks.current_price)
+								history.save()	
+								if(b_ss=="Buy"):
+									msg= "<strong>You have successfully bought "+str(quantity)+" shares of '"+company+"' at " +'&#8377;' +str(stocks.current_price) +"  per share</strong>"
+			    					else:
+			     						msg="<strong>You have successfully short sold "+str(quantity)+" shares of '"+company+"' at '" +'&#8377;'+str(stocks.current_price)+" per share</strong>"
+								msg = msg + "<strong><br>You have paid "+ '&#8377;'+str(brokerage)+" as brokerage for the transaction<br><br></strong>"
+
+				except Stock_data.DoesNotExist:
+			   		msg= "<strong>Requested Company '"+str(company)+"' is not listed</strong><br><br>"
+			else: 	
+				msg = "<strong>Invalid Data</strong><br><br>"
+		else:
+			msg= "<strong>Invalid Data</strong><br><br>"					
+	else:		
+		msg= "<strong>Please enter valid data in the necessary fields</strong><br><br>"
+	print msg
+	return HttpResponse(msg);
+
+
+#=======Sell/Short-Cover=====#
+@ensure_csrf_cookie
+def sell(request):						
+	if(request.session['sell']==1):
+		request.session['sell']=0
+		context=RequestContext(request)	
+		cclose=True
+		no_stock=False
+		transactions=[]
+		data={}
+		data_array={}
+		d=[]
+		k=0
+		now = datetime.datetime.now()
+ 		if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
+			start_time=datetime.time(hour=9,minute=15,second=00)
+			end_time=datetime.time(hour=15,minute=30,second=00)
+			now = datetime.datetime.now().time()
+			if(start_time<now<end_time):
+				cclose=False
+		try:
+			t = Transaction.objects.filter(user_id=request.session['username'])
+			for i in t:
+				temp={}
+				data={}
+				temp['tr']=""
+				temp['old_quantity']=float(i.quantity)
+				temp['old_value']=float(i.value)
+				temp['buy_ss']=i.buy_ss
+				temp['symbol']=i.symbol
+				if(i.buy_ss=='Buy'):
+					temp['id']='Buy'
+				else:
+					temp['id']='Short'
+				temp['tr']= temp['tr']+"<tr id="+str(temp['symbol'])+str(temp['id'])+"><td>"+str(temp['symbol'])+"</td><td>"+str(temp['buy_ss'])+"</td><td>"+str(temp['old_quantity'])+"</td><td>"
+				try:
+					s=Stock_data.objects.get(symbol=temp['symbol'])
+					temp['tr']+=(str(s.current_price)+'</td>')
+				except Stock_data.DoesNotExist:
+					temp['tr']+='Not Listed'
+				if(temp['buy_ss']=='Buy'):
+					temp['profit']=float(s.current_price)-(temp['old_value']/temp['old_quantity'])
+				else:
+					temp['profit']=(temp['old_value']/temp['old_quantity'])-float(s.current_price)
+				temp['prof_per']=(temp['profit']/(temp['old_value']/temp['old_quantity']))*100
+				if(temp['prof_per']>0):
+					temp['clrclss']='uptrend'
+				elif(temp['prof_per']<0):
+					temp['clrclss']='dwntrend'
+				else:
+					temp['clrclss']=''
+				temp['tr']+=('<td class='+str(temp['clrclss'])+'>'+str(temp['prof_per'])+'</td>')
+				if(temp['buy_ss']=='Buy'):
+					temp['disp']='Sell'
+				else:
+					temp['disp']='Short Cover'
+				temp['tr'] =temp['tr']+"<td><form id=\"s_sc"+str(k)+"\"name=\"s_sc\" action=\"\" method=\"POST\" style=\"margin-top:0px;\"><input type=\"hidden\" name=\"company\" value=\""+str(temp['symbol'])+"\"><input type=\"text\"  name=\"quantity\" value=\"\" placeholder=\"No of Shares to trade\" title=\"Integer less than or equal to Shares in hand\" style=\"width:48%;float:left;\"><input id=\"pending\" type=\"text\" class=\"pull-right\" name=\"pending\" placeholder=\"Pending price\" title=\"Leave blank if not making a pending order\"style=\"width:48%;float:left;\"><input type=\"hidden\" name=\"tradeType\" value=\""+str(temp['disp'])+"\"><br><br><input id=\"submit_sc"+str(k)+"\" type=\"button\" class=\"button btn btn-orange btn-block\" name=\"submit_sc\" value=\""+str(temp['disp'])+"\"></td></form></tr>"
+				data['symbol']=temp['symbol']
+				data['buy_ss']=temp['buy_ss']
+				data['old_quantity']=temp['old_quantity']
+				data['old_value']=temp['old_value']
+				data_array[k]=data
+				transactions.append(temp)
+				k+=1	
+			data_array['size']=k
+			symbols=False
+			if(len(transactions)>0):
+				symbols = True
+			else:
+				no_stock=True
+			d=json.dumps(data_array,cls=DjangoJSONEncoder)
+		except Transaction.DoesNotExist:
+			no_stock=True 
+
+		return render_to_response('dashboard/sell.html',{'username': request.session['username'],'cclose' : cclose,'time' : datetime.datetime.now(),'no_stock': no_stock,'trans':transactions,'symbols' : symbols,'data' : d,})
+	return redirect('index')
+
+#======Submit-Sell======#
+@ensure_csrf_cookie
+def submit_sell(request):
+	msg=""
+	transactions=[]
+	data=request.POST
+	data_array={}
+	d=[]
+	dat={}
+	quantity_invalid=False
+	pp_invalid = False
+	retDat=[]
+	k=0
+	print(str(data['quantity']))
+	if(len(data)!=0):
+		qnty_test = data['quantity']
+		if(not is_number(qnty_test)):
+			quantity_invalid=True
+		else:
+			qnty_test=int(data['quantity'])
+			if(qnty_test < 0):
+				quantity_invalid=True
+		if(not quantity_invalid):
+			company=data['company']
+			quantity=float(data['quantity'])
+			pending_price=data['pending']
+			s_sc=data['tradeType']
+			if(not is_number(pending_price)):
+				pp_invalid=True
+			else:
+				pending_price=int(data['pending'])
+				if(pending_price < 0):
+					pp_invalid=True
+			if(s_sc=="Sell"):
+				b_ss="Buy"
+			else:
+				b_ss="Short Sell"
+
+			try:
+				s = Stock_data.objects.get(symbol=company)
+				current_price=float(s.current_price)
+				try:
+					t = Transaction.objects.get(user_id=request.session['username'],symbol=company,buy_ss=b_ss)
+					old_quantity=float(t.quantity)			
+					if(quantity_invalid):
+						msg = "<strong>Invalid Data</strong><br><br>"
+					elif(pending_price!="" and current_price!=pending_price):
+						if(pp_invalid):
+							msg = "<strong>Invalid Data</strong><br><br>"
+						elif (s_sc=="Short Cover" and pending_price>current_price):
+							msg = "<strong>Pending Price for Short Covering should be less than Current Price</strong><br><br>"
+						elif (s_sc=="Sell" and pending_price<current_price):
+							msg = "<strong>Pending Price for Selling should be greater than Current Price</strong><br><br>"
+						else:
+							p=Pending(user_id=request.session['username'],symbol=company,quantity=quantity,value=pending_price,buy_ss=s_sc)
+							p.save()
+							msg = "<strong>You have made a pending order to "+str(s_sc)+" "+str(quantity)+" shares of "+str(company)+" at a desired price of"+'&#8377;'+str(pending_price)+"</strong><br><br>"
+					elif(quantity>old_quantity):
+						msg = "<strong>You do not own enough number of shares of the requested Company for this transaction</strong><br><br>"
+					else:
+						old_val=float(t.value)
+						new_quantity=old_quantity-quantity
+						old_total=(old_val/old_quantity)*quantity
+						new_val=old_val-old_total
+						if(new_quantity==0):
+							del_t = Transaction.objects.get(user_id=request.session['username'],symbol=company,buy_ss=b_ss)
+							del_t.delete()
+						else:
+							upd_t=Transaction.objects.get(user_id=request.session['username'],symbol=company,buy_ss=b_ss)
+							upd_t.quantity=new_quantity
+							upd_t.value=new_val
+							upd_t.save()
+						
+						pf= Portfolio.objects.get(user_id=request.session['username'])
+						margin=float(pf.margin)
+						if(s_sc=="Short Cover"):
+							sc_profit=old_total-(quantity*current_price)
+							cash_bal=float(pf.cash_bal)+sc_profit
+							margin=(margin-(old_val/2))+(new_val/2)
+						elif(s_sc=="Sell"):
+							cash_bal=float(pf.cash_bal)+float(pf.margin)+(quantity*current_price)
+						
+						no_trans=pf.no_trans+1; 
+						if(no_trans<=100):
+	 						brokerage=((0.5/100)*current_price)*quantity;
+						elif(no_trans<=1000):
+							brokerage=((1/100)*current_price)*quantity;
+						else:
+							brokerage=((1.5/100)*current_price)*quantity;
+						cash_bal=cash_bal-brokerage
+						pf.cash_bal=cash_bal
+						pf.margin=margin
+						pf.no_trans=no_trans
+						pf.save()
+						now = datetime.datetime.now().time						
+						h=History(user_id=request.session['username'],time=now,symbol=company,buy_ss=s_sc,quantity=quantity,price=s.current_price)
+						h.save()
+						try:
+							pend=Pending.objects.get(user_id=request.session['username'],symbol=company,buy_ss=s_sc)
+							if(new_quantity == 0):
+								pend.delete()
+							elif(pend.quantity>new_quantity):
+								pend.quantity=new_quantity
+								pend.save()
+						except Pending.DoesNotExist:
+							print("error in Pending")
+						if(s_sc=="Sell"):
+	 						msg = "<strong>You have successfully sold "+str(quantity)+" shares of "+str(company)+"at"+'&#8377;'+str(s.current_price)+" per share<strong>"
+						else:
+							msg = "<strong>You have successfully short covered "+str(quantity)+" shares of '"+str(company)+" at "+'&#8377;'+str(s.current_price)+" per share"
+				except Transaction.DoesNotExist:
+					msg="error"				
+			except Stock_data.DoesNotExist:
+				msg = "<strong>Requested Company '"+str(company)+"' is not listed</strong><br><br>";
+		else:
+			msg = "<strong>Please enter valid data</strong><br><br>"				
+						
+	try:
+		trow=""
+		t = Transaction.objects.filter(user_id=request.session['username'])
+		table = "<div class='table-responsive'><table class='table table-striped'><thead><tr><th>Company</th><th>Type of Trade</th><th>Shares in Hand</th>		<th>Current Price ("+'&#8377;'+")</th><th>Gain % per Share</th><th>Trade <span style=\"font-size:12px;\">(Use Pending Price to make a Pending Order)</span></th></tr></thead><tbody>"
+					
+		for i in t:
+			temp={}
+			temp['old_quantity']=float(i.quantity)
+			temp['old_value']=float(i.value)
+			temp['buy_ss']=i.buy_ss
+			temp['symbol']=i.symbol
+			if(i.buy_ss=='Buy'):
+				temp['id']='Buy'
+			else:
+				temp['id']='Short'
+			temp['tr'] = '<tr id='+temp['symbol']+temp['id']+'><td>'+temp['symbol']+'</td><td>'+temp['buy_ss']+'</td><td>'+str(temp['old_quantity'])+'</td><td>'
+			try:
+				s=Stock_data.objects.get(symbol=temp['symbol'])
+				temp['tr']+=(str(s.current_price)+'</td>')
+			except Stock_data.DoesNotExist:
+				temp['tr']+='Not Listed'
+			if(temp['buy_ss']=='Buy'):
+				temp['profit']=float(s.current_price)-(temp['old_value']/temp['old_quantity'])
+			else:
+				temp['profit']=(temp['old_value']/temp['old_quantity'])-float(s.current_price)
+			temp['prof_per']=(temp['profit']/(temp['old_value']/temp['old_quantity']))*100
+			if(temp['prof_per']>0):
+				temp['clrclss']='uptrend'
+			elif(temp['prof_per']<0):
+				temp['clrclss']='dwntrend'
+			else:
+				temp['clrclss']=''
+			temp['tr']+=('<td class='+temp['clrclss']+'>'+str(temp['prof_per'])+'</td>')
+			if(temp['buy_ss']=='Buy'):
+				temp['disp']='Sell'
+			else:
+				temp['disp']='Short Cover'
+			temp['tr'] = temp['tr']+"<td><form id=\"s_sc"+str(k)+"\"name=\"s_sc\" action=\"\" method=\"POST\" style=\"margin-top:0px;\"><input type=\"hidden\" name=\"company\" value=\""+temp['symbol']+"\"><input type=\"text\"  name=\"quantity\" value=\"\" placeholder=\"No+ of Shares to trade\" title=\"Interger less than or equal to Shares in hand+\" style=\"width:48%;float:left;\"><input id=\"pending\" type=\"text\" class=\"pull-right\" name=\"pending\" placeholder=\"Pending price\" title=\"Leave blank if not making a pending order+\"style=\"width:48%;float:left;\"><input type=\"hidden\" name=\"tradeType\" value=\""+temp['disp']+"\"><br><br><input id=\"submit_sc\""+str(k)+"\" type=\"button\" class=\"button btn btn-orange btn-block\" name=\"submit_sc\" value=\""+temp['disp']+"\"></td></form></tr>"
+			trow = trow+temp['tr']
+			print trow
+			dat['symbol']=temp['symbol']
+			dat['buy_ss']=temp['buy_ss']
+			dat['old_quantity']=temp['old_quantity']
+			dat['old_value']=temp['old_value']
+			transactions.append(temp)
+			data_array[k]=dat
+			k+=1
+			
+		data_array['size']=k
+		trow= trow+"</tbody></table></div>"
+		table=table+trow
+		if(not len(t)>0):
+			table="<center><h4 class='dark'>You have no Stock Holdings to sell</h4></center>"	
+		retDat.append(msg)
+		retDat.append(table)
+		retDat.append(data_array)
+		print table
+		d=json.dumps(retDat,cls=DjangoJSONEncoder)
+	except Transaction.DoesNotExist:
+		print d
+	
+	
+	return HttpResponse(d,content_type="application/json")
+
+#=======Sell-Trend Giver===#
+def sell_trend(request):
+	l={}
+	l=request.POST
+	d2=[]
+	k=0
+	while(k < int(l['symbols[size]'])):
+	 	d1=[]
+		try:
+			sym='symbols['+str(k)+'][symbol]'
+			buy='symbols['+str(k)+'][buy_ss]'
+			oldq='symbols['+str(k)+'][old_quantity]'
+			oldv='symbols['+str(k)+'][old_value]'			
+			c=Stock_data.objects.get(symbol=l[sym]).current_price
+			d1.append(l[sym])
+			d1.append(c)
+			d1.append(l[buy])
+			d1.append(l[oldq])
+			d1.append(l[oldv])
+			d2.append(d1)
+			print c
+			k+=1
+		except Stock_data.DoesNotExist:
+			x=3
+	s=json.dumps(d2,cls=DjangoJSONEncoder)
+	return HttpResponse(s,content_type="application/json")
+#=======Leaderboard========#
+@ensure_csrf_cookie
+def leaderboard(request):
+	p=Portfolio.objects.all().order_by('-net_worth')
+	i=1
+	l={}
+	for t in p:
+		u=User.objects.get(user_id=t.user_id)
+		if(i>10):
+			break
+		user={'user_id':t.user_id,'name': u.first_name,'net_worth': t.net_worth}		
+		l[str(i)]=user
+		i+=1
+	data=json.dumps(l,cls=DjangoJSONEncoder)		
+	return HttpResponse(data,content_type="application/json")
+
+#======To Get Current Price======#
+
+def currPrice(request):
+	username=request.session['username']
+
+	msg=""
+	data=[] 
+	comp =request.POST['comp']
+	curr_price=Stock_data.objects.get(symbol=comp).current_price
+	cash_bal=Portfolio.objects.get(user_id=username).cash_bal
+	margin=Portfolio.objects.get(user_id=username).margin
+	no_trans=Portfolio.objects.get(user_id=username).no_trans
+	data.append(curr_price)
+	data.append(cash_bal)
+	data.append(margin)
+	data.append(no_trans)
+	dat=json.dumps(data,cls=DjangoJSONEncoder)
+	return HttpResponse(dat,content_type="application/json")
+	
+#==========Utility Functions========#
+
+#=======Number=======#
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+        
+

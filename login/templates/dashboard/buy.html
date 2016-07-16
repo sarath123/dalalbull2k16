@@ -1,0 +1,359 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+  <link rel="shortcut icon" href="{% static 'images/logo.png' %}" type="image/png">
+  <link rel="shortcut icon" href="{% static 'images/title.png' %}" type="image/png">
+  <title>Buy/ShortSell | Dalalbull</title>
+
+  <!-- CSS  -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
+  <link href="{% static 'css/style.css' %}" type="text/css" rel="stylesheet" media="screen,projection"/>
+
+  <!--<link href="{% static 'css/style.css' %}" type="text/css" rel="stylesheet" media="screen,projection"/>-->
+ 
+       
+</head>
+<body style="background-color:#E5c9b5" onload="isLoggedin()"><!--red lighten-5">-->
+<!--"grey lighten-3"-->
+<header>
+
+  
+   <!--   
+
+      <ul id="nav-mobile" class="side-nav">
+        <li><a href="#">Navbar Link</a></li>
+      </ul>
+      <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+    </div>
+  </nav>
+
+
+  <div class="container"><a href="#" data-activates="nav-mobile" class="button-collapse side-nav full hide-on-large-only">
+  <i class="mdi-navigation-menu"></i></a></div>
+-->
+
+<ul id="slide-out" class="side-nav fixed colorcode  ">
+  <ul>
+  <div class="card no-margin">
+            <div class="card-image" style="background:#fff;height:150px;"> <!--F44336-->
+                <img src="{% static 'images/logo.png' %}" style="transform:scale(1.5);">
+              <!--<span class="card-title">DalalBull</span>-->
+            </div>
+            
+           
+          </div>
+  </ul>
+
+  <ul class="no-padding" style="margin-top:5px">  
+  <li  class="bold no-padding" ><a class="waves-effect waves-teal sidenava " href="../dashboard"><img class="tintu circle" src="{% static 'images/dashboard.svg' %}"> Dashboard</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../stockinfo"><img class="tintu circle" src="{% static 'images/pin.svg' %}">Stock Information</a></li>
+  <li  class="bold title no-padding" style="background-color: #B31010;"><a class="waves-effect waves-teal sidenava white-text" href="../buy"><img class="tintu circle" src="{% static 'images/cart-white.svg' %}">Buy/Short Sell </a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../sell"><img class="tintu circle" src="{% static 'images/dollar.svg' %}">Sell/Short Cover</a></li>
+  <li  class="bold no-padding" ><a class="waves-effect waves-teal sidenava " href="../pending"><img class="tintu circle" src="{% static 'images/086__empty.svg' %}">Pending Orders</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../history"><img class="tintu circle" src="{% static 'images/briefcase.svg' %}">Transaction History</a></li>
+  <li  class="bold no-padding"><a class="waves-effect waves-teal sidenava" href="../faq"><img class="tintu circle" src="{% static 'images/help.svg' %}">Help</a></li>
+  </ul>
+ <ul>
+          <div class="card no-margin">
+            <p style="font-weight:300;">sponsored by:</p>
+            <div class="card-image" style="background:#fff;margin-top:2px"> <!--F44336-->
+              <a target="_blank" href="http://www.geojitbnpparibas.com" >  <img src="../static/images/sponsor.jpg" style="height:70px;transform:scale(0.7)"></a>
+              <!--<span class="card-title">DalalBull</span>-->
+            </div>
+            
+           
+          </div>
+  </ul>
+  </ul> 
+  <!--
+  <ul id="nav-mobile" class="side-nav fixed" style="width:240px;">
+
+  </ul>
+-->
+
+
+<nav class="top-nav colorcodetop"> <!--style="background:#D32F2F" -->
+        
+          <div class="nav-wrapper ">
+
+            <a href="#" data-activates="slide-out " class="button-collapse "><i class="mdi-navigation-menu"></i></a>
+            <a class="brand-logo lulu"><img src="{% static 'images/cart-white.svg' %}" class="tintu-header"><span class="nav-title_g ">Buy/Short Sell</span></a>
+
+            <ul id="nav-mobile" class="right hide-on-med-and-down ">
+            <li class=""><a href="#!" class=" disableClick"><img style="height:40px;width:40px;"src="https://graph.facebook.com/{{username}}/picture?redirect=true&height=32&width=32" class="circle propic"><span style="margin-left:17px;">{{name}}</span></a></li>
+            <li class="nameboard"><a href="#" data-activates='dropdown2' class="dropdown-button" style="padding:0"><i class="material-icons ">arrow_drop_down</i></a></li>
+           <!--<li><a href="#!" class="tooltipped" data-position="bottom" data-delay="50" data-tooltip="Logout"><i class="material-icons">input</i></a></li>-->
+            </ul>
+
+            <ul id="menu_but"class="right hide-on-large-only valign-wrapper"  >
+             
+             <li  class="valign "><a href="#" data-activates='dropdown1' class="dropdown-button"><i class="material-icons ">more_vert</i></a></li>
+            </ul>
+
+
+            
+            <ul id='dropdown1' class='dropdown-content orange-text'>
+              <li><a href="#!" onclick="logout()" class="orange-text">Logout</a></li>
+           </ul>
+           <ul id='dropdown2' class='dropdown-content orange-text'>
+              <li><a href="#!" onclick="logout()" class="orange-text">Logout</a></li>
+           </ul>
+
+       </div>
+
+      </nav>
+
+
+</header>
+
+<main >
+
+<canvas id="trian" style="z-index:-1"></canvas>
+
+
+    {% if cclose %}
+<div class="container">
+  <div class="hide-on-small-only row" >
+    <div class="card " style="width:100px;background:rgba(0,0,0,0)">
+  </div>
+  </div>
+  <div class="card hoverable center">
+    <h3>Dalalbull 2015 has ended!</h3>
+    <h6>Thank you for participating.</h6>
+    <h6>See you at Excel.</h6><br>
+  </div>
+</div>
+    {% else %}
+<div class="container hide-on-med-and-up">
+  
+<div class="card-panel z-depth-3  buySellCard " style="margin-top:20px;">
+
+ <div class="row">
+
+    <form class="col s12">
+     <h5 class="labelStyle">Buy Now</h5>
+         <div class="input-field col s12 grey-text text-darken-1">
+    <select id ="companyName">
+      <option value="none" disabled selected>Company Name</option>
+        {% for t in companies %}
+          <option value="{{t.symbol}}">{{t.symbol}}</option>
+        {% endfor %}
+    </select>
+    <!--<label>Company Name</label>-->
+  </div>
+     
+      <div class="input-field col s12 ">
+          <input id="Quantity" type="number" min="0" class="validate " >
+          <label >Quantity</label>
+        </div>
+        
+        
+      <div class="input-field col s12 grey-text text-darken-1">
+    <select id="b_ss">
+      <option value="none" disabled selected>Choose Buy/ShortSell</option>
+      <option value="Buy">Buy <i class="material-icons right"></i></option>
+      <option value="Short Sell">Short Sell<i class="material-icons right"></i></option>
+    </select>
+    <!--<label>Buy/ShortSell</label>-->
+  </div>
+
+       <h5 class="labelStyle">Pending Order</h5>
+<div class="input-field col s12 grey-text text-darken-1">
+          <input id="last_name" type="number" min="0" class="validate ">
+          <label for="last_name">Desired price(in ₹)</label>
+        </div>
+<div class="col s12">
+  <button class="btn modal-trigger waves-effect waves-light amber darken-4 activator center" id="submitter" type="submit" name="action" data-target="submitModal" ><span>Submit</span>
+    <i class="material-icons right hide ">send</i>
+  </button>
+  </div>
+    </form>
+  </div>
+        
+
+
+
+</div>
+</div>
+
+
+
+
+<div class="container" id="buycontainer2"> <!--big device contaoner-->
+<div class="row">
+
+
+<div class="card-panel z-depth-2 col s12 buySellCard hide-on-small-only" id="cheruth">
+
+ <div class="row">
+
+    <form class="col s12">
+     <h5 class="labelStyle">Buy Now</h5>
+         <div class="input-field col s12 grey-text text-darken-1">
+    <select id="companyName1">
+      <option value="none" disabled selected>Company Name</option>
+        {% for t in companies %}
+          <option value="{{t.symbol}}">{{t.symbol}}</option>
+        {% endfor %}
+    </select>
+    <!--<label>Company Name</label>-->
+  </div>
+     
+      <div class="input-field col s12 ">
+          <input id="Quantity1" type="number"  min="0" class="validate " >
+          <label >Quantity</label>
+        </div>
+        
+        
+      <div class="input-field col s12 grey-text text-darken-1">
+    <select id="b_ss1">
+      <option value="none" disabled selected>Choose Buy/ShortSell</option>
+      <option value="Buy">Buy <i class="material-icons right"></i></option>
+      <option value="Short Sell">Short Sell<i class="material-icons right"></i></option>
+    </select>
+    <!--<label>Buy/ShortSell</label>-->
+  </div>
+
+       <h5 class="labelStyle">Pending Order</h5>
+<div class="input-field col s12 grey-text text-darken-1">
+          <input id="last_name1" type="number" min="0" class="validate ">
+          <label >Desired price(in ₹)</label>
+        </div>
+<div class="col s12">
+  <button class="btn modal-trigger waves-effect waves-light amber darken-4 activator center" id="submitter" type="submit" name="action" data-target="submitModal" >Submit
+    <i class="material-icons right">send</i>
+  </button>
+  </div>
+    </form>
+    {% endif %}
+  </div>
+        
+
+</div>
+
+
+<div class="z-depth-2 card col s5 hide right buySellCard center " id="cheruth2" >
+
+<h5 style="font-weight:500;" >Transaction Details</h5>
+<span> (Expected values about given data)</span>
+
+
+<table class="striped centered" id="trans_det_table">
+  <tr>
+    <th>Company:</th>
+    <td id="company_name"></td>
+  </tr>
+  <tr>
+    <th>Trade Price:</th>
+    <td id="curr_Price"></td>
+  </tr>
+  <tr>
+    <th>No. of Shares: </th>
+    <td id="no_of_shares"></td>
+  </tr>
+  <tr>
+    <th>Type of Trade: </th>
+    <td id="type"></td>
+  </tr>
+  <tr>
+    <th>Total Value: </th>
+    <td id="total"></td>
+  </tr>
+  <tr>
+    <th>Brokerage: </th>
+    <td id="brokerage"></td>
+  </tr>
+  <tr style="" id="marginparent">
+    <th>Margin: </th>
+    <td id="margin"></td>
+  </tr>
+  <tr>
+    <th>Cash Available: </th>
+    <td id="cash"></td>
+  </tr>
+
+</table>
+</div>
+</div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+ <div id="submitModal" class="modal bottom-sheet  ">
+ 
+    <div class="modal-content" >
+    <div id="dishyum">
+      <h4>Check Out</h4>
+      <p><strong>The trading price is subject to change during transaction processing.</strong></p>
+      <p><strong>Are you sure you want to continue ?</strong></p>
+      <p><strong>(Please do not Logout or Refresh the page while the transaction progresses)</strong></p>
+    </div>
+    <div id="processContent" class=" valign-wrapper" >
+         <img src="{% static 'images/progress.gif' %}" class="valign" style="margin:0 auto;">
+    </div>
+
+    <div id="processContent2">
+        <h5>Transaction Response</h5>
+        <p id="transresult"></p>
+     </div>
+ </div>
+    
+    <div class="modal-footer" id="modfooter1">
+      <button class="btn-flat waves-effect waves-darken modal-close modalButton"><a href="#!" class=" red-text "><i class="material-icons left">not_interested</i> Disagree</a></button>
+      <button class="btn-flat waves-effect waves-darken modalButton" id="processingBut"><a href="#!" class="green-text text-darken-4"><i class="material-icons left">done</i>Agree</a></button> 
+    </div>
+
+    <div class="modal-footer" id="modfooter2">
+       <button class="btn-flat waves-effect waves-darken modalButton" id="finishedBut"><a href="#!" class="green-text text-darken-4"><i class="material-icons left">done</i>Done</a></button> 
+    </div>
+  </div>
+</main>
+
+
+  <!--  Scripts-->
+  <!-- <script src="{% static 'js/facebook.js' %}"></script>
+  <script src="{% static 'js/buyselljs.js' %}"></script> -->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.nicescroll/3.6.0/jquery.nicescroll.js"></script>>
+  <script src="{% static 'js/facebook.js' %}"></script>
+  <script src="{% static 'js/buyselljs.js' %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/trianglify/0.2.0/trianglify.min.js"></script>
+<script>
+    var pattern = Trianglify(
+    {
+       // width: window.innerWidth,
+       // height: window.innerHeight
+       variance:0.7,
+       cell_size: 35,
+       x_colors: 'YlOrRd',
+       y_colors: 'match_x',
+    });
+  pattern.canvas(document.getElementById('trian'));
+//    document.body.appendChild()
+</script>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-66440025-1', 'auto');
+  ga('send', 'pageview');
+
+  </script>
+
+  </body>
+</html>

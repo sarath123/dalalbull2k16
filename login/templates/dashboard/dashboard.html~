@@ -1,0 +1,23 @@
+{% load staticfiles %}
+{% block extra_js %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Dashboard</title>
+	<link rel="stylesheet" href="{% static 'css/ticker.css' %}">
+</head>
+<body onload="startpolling()">
+	<div id="StockTickerContainer" style="height: 32px; line-height: 32px; overflow: hidden;">
+		<div id='dvStockTicker' class='stockTicker'>
+       	</div>
+    	</div><br>
+	<a href="../faq">FAQ</a>
+	<a href="../buy">BUY</a>
+	<a href="../sell">SELL</a>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
+       <script src="{% static 'js/ticker.js' %}"></script>
+       <script src="{% static 'js/dashboard.js' %}"></script>
+       
+</body>
+</html>
+{% endblock %}
