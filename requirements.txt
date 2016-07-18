@@ -1,0 +1,4 @@
+django==1.8.2
+celery==3.1.23
+django-celery==3.1.17
+MySQL-python==1.2.5
