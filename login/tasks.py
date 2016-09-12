@@ -8,9 +8,32 @@ import json
 import datetime
 from .models import User,Portfolio,Stock_data,Transaction,History,Pending,Old_Stock_data
 
+
+###-----------
+import celery
+from celery import Celery
+from datetime import timedelta
+
+celery = Celery(__name__)
+celery.config_from_object(__name__)
+
+
+#-------------
+
+
+
 #Deletes all old stock data
 
 #======Tasks======#
+
+
+
+#-------------
+@celery.task
+def say_hello():
+    print('Hello, World!')
+#-------------
+
 @shared_task
 def tq(): 
 	print("Stock Update");	
@@ -238,74 +261,77 @@ def networth():
 #=======Stock Database Update=========#
 
 def stockdata():
+
 	symbolmap={}
 	symbolmap['CNX NIFTY']=0                        
-	symbolmap['TECHM']=1                        
-	symbolmap['BPCL']=2                        
-	symbolmap['HEROMOTOCO']=3                        
-	symbolmap['BAJAJ-AUTO']=4                        
-	symbolmap['HINDUNILVR']=5                        
-	symbolmap['LUPIN']=6                        
-	symbolmap['POWERGRID']=7                        
-	symbolmap['ITC']=8                        
-	symbolmap['GAIL']=9                        
-	symbolmap['NTPC']=10                        
-	symbolmap['TCS']=11                        
-	symbolmap['ULTRACEMCO']=12                        
-	symbolmap['IDEA']=13                        
-	symbolmap['M&M']=14                        
-	symbolmap['INFY']=15                        
-	symbolmap['CIPLA']=16                        
-	symbolmap['WIPRO']=17                        
-	symbolmap['HDFC']=18                        
-	symbolmap['CAIRN']=19                        
-	symbolmap['MARUTI']=20                        
-	symbolmap['RELIANCE']=21                        
-	symbolmap['BHARTIARTL']=22                        
-	symbolmap['ZEEL']=23                        
-	symbolmap['ONGC']=24                        
-	symbolmap['LT']=25                        
-	symbolmap['ASIANPAINT']=26                        
-	symbolmap['PNB']=27                        
-	symbolmap['TATAPOWER']=28                        
-	symbolmap['COALINDIA']=29                        
-	symbolmap['BHEL']=30                        
-	symbolmap['DRREDDY']=31                        
-	symbolmap['YESBANK']=32                        
-	symbolmap['SUNPHARMA']=33                        
-	symbolmap['GRASIM']=34                        
-	symbolmap['AXISBANK']=35                        
-	symbolmap['AMBUJACEM']=36                        
-	symbolmap['BANKBARODA']=37                        
-	symbolmap['TATASTEEL']=38                        
-	symbolmap['KOTAKBANK']=39                        
-	symbolmap['NMDC']=40                        
-	symbolmap['INDUSINDBK']=41                        
-	symbolmap['HDFCBANK']=42                        
-	symbolmap['VEDL']=43                        
-	symbolmap['BOSCHLTD']=44                        
-	symbolmap['ACC']=45                        
-	symbolmap['TATAMOTORS']=46                        
-	symbolmap['HCLTECH']=47                        
-	symbolmap['ICICIBANK']=48                        
-	symbolmap['SBIN']=49                        
-	symbolmap['HINDALCO']=50                        
+	symbolmap['INFY'] = 1
+	symbolmap['TECHM'] = 2
+	symbolmap['TCS'] = 3
+	symbolmap['RELIANCE'] = 4
+	symbolmap['HCLTECH'] = 5
+	symbolmap['WIPRO'] = 6
+	symbolmap['COALINDIA'] = 7
+	symbolmap['KOTAKBANK'] = 8
+	symbolmap['HDFCBANK'] = 9
+	symbolmap['EICHERMOT'] = 10
+	symbolmap['HDFC'] = 11
+	symbolmap['ASIANPAINT'] = 12
+	symbolmap['IDEA'] = 13
+	symbolmap['HINDUNILVR'] = 14
+	symbolmap['BHARTIARTL'] = 15
+	symbolmap['MARUTI'] = 16
+	symbolmap['SUNPHARMA'] = 17
+	symbolmap['CIPLA'] = 18
+	symbolmap['POWERGRID'] = 19
+	symbolmap['ONGC'] = 20
+	symbolmap['GRASIM'] = 21
+	symbolmap['INDUSINDBK'] = 22
+	symbolmap['DRREDDY'] = 23
+	symbolmap['ICICIBANK'] = 24
+	symbolmap['HEROMOTOCO'] = 25
+	symbolmap['ULTRACEMCO'] = 26
+	symbolmap['GAIL'] = 27
+	symbolmap['INFRATEL'] = 28
+	symbolmap['LUPIN'] = 29
+	symbolmap['ITC'] = 30
+	symbolmap['AUROPHARMA'] = 31
+	symbolmap['BAJAJ-AUTO'] = 32
+	symbolmap['BOSCHLTD'] = 33
+	symbolmap['ZEEL'] = 34
+	symbolmap['TATAMTRDVR'] = 35
+	symbolmap['M&M'] = 36
+	symbolmap['TATAMOTORS'] = 37
+	symbolmap['AXISBANK'] = 38
+	symbolmap['LT'] = 39
+	symbolmap['NTPC'] = 40
+	symbolmap['BPCL'] = 41
+	symbolmap['TATAPOWER'] = 42
+	symbolmap['SBIN'] = 43
+	symbolmap['BHEL'] = 44
+	symbolmap['ACC'] = 45
+	symbolmap['ADANIPORTS'] = 46
+	symbolmap['AMBUJACEM'] = 47
+	symbolmap['TATASTEEL'] = 48
+	symbolmap['BANKBARODA'] = 49
+	symbolmap['YESBANK'] = 50
+	symbolmap['HINDALCO'] = 51                        
 	now = datetime.datetime.now()
+
 	if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
 		start_time=datetime.time(hour=9,minute=15,second=00)
-		end_time=datetime.time(hour=15,minute=30,second=00)
+		end_time=datetime.time(hour=23,minute=30,second=00)  #hour = 15
 		now = datetime.datetime.now().time()
 		if(start_time<now<end_time):
 			try :
 				url='http://nseindia.com/live_market/dynaContent/live_watch/stock_watch/niftyStockWatch.json'
-				CNames = 'TECHM.NS,BPCL.NS,HEROMOTOC.NS,BAJAJ-AUTO-EQ.NS,HINDUNILVR-EQ.NS,LUPIN.NS,POWERGRID.NS,ITC.NS,GAIL.NS,NTPC.NS,TCS.NS,ULTRACEMC.NS,IDEA.NS,M&M.NS,INFY.NS,CIPLA.NS,WIPRO.NS,HDFC.NS,CAIRN.NS,MARUTI.NS,RELIANCE.NS,BHARTIART.NS,ZEEL.NS,ONGC.NS,LT.NS,ASIANPAIN.NS,PNB.NS,TATAPOWER.NS,COALINDIA.NS,BHEL.NS,DRREDDY.NS,YESBANK.NS,SUNPHARMA.NS,GRASIM.NS,AXISBANK.NS,AMBUJACEM.NS,BANKBAROD.NS,TATASTEEL.NS,KOTAKBANK.NS,NMDC.NS,INDUSINDBK-EQ.NS,HDFCBANK.NS,VEDL-EQ.NS,BOSCHLTD.NS,ACC.NS,TATAMOTOR.NS,HCLTECH.NS,ICICIBANK.NS,SBIN.NS,HINDALCO.NS'
+				CNames = 'INFY.NS,TECHM.NS,TCS.NS,RELIANCE.NS,HCLTECH.NS,WIPRO.NS,COALINDIA.NS,KOTAKBANK.NS,HDFCBANK.NS,EICHERMOT.NS,HDFC.NS,ASIANPAIN.NS,IDEA.NS,HINDUNILVR-EQ.NS,BHARTIART.NS,MARUTI.NS,SUNPHARMA.NS,CIPLA.NS,POWERGRID.NS,ONGC.NS,GRASIM.NS,INDUSINDBK-EQ.NS,DRREDDY.NS,ICICIBANK.NS,HEROMOTOC.NS,ULTRACEMC.NS,GAIL.NS,INFRATEL.NS,LUPIN.NS,ITC.NS,AUROPHARM.NS,BAJAJ-AUTO-EQ.NS,BOSCHLTD.NS,ZEEL.NS,TATAMTRDVR.NS,M&M.NS,TATAMOTOR.NS,AXISBANK.NS,LT.NS,NTPC.NS,BPCL.NS,TATAPOWER.NS,SBIN.NS,BHEL.NS,ACC.NS,ADANIPORTS.NS,AMBUJACEM.NS,TATASTEEL.NS,BANKBAROD.NS,YESBANK.NS,HINDALCO.NS'
 				yurl='http://finance.yahoo.com/webservice/v1/symbols/%5Ensei,'+CNames+'/quote?format=json&view=detail'
-				hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-		'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-		'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-		'Accept-Encoding': 'none',
-		'Accept-Language': 'en-US,en;q=0.8',
-		'Connection': 'keep-alive'}
+				hdr = {'User-Agent': "Mozilla/5.0 (Linux; Android 6.0.1; MotoG3 Build/MPI24.107-55) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Mobile Safari/537.36",
+						'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+						'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+						'Accept-Encoding': 'none',
+						'Accept-Language': 'en-US,en;q=0.8',
+						'Connection': 'keep-alive'}
 				req = urllib2.Request(url, headers=hdr) 
 				response = urllib2.urlopen( req )
 				yreq = urllib2.Request(yurl, headers=hdr)
@@ -313,11 +339,13 @@ def stockdata():
 				yahoo = {}
 				yahoo = json.load(yresponse)
 				json_data=json.load(response)
+				#print 'This is it: '+str(yahoo)
 				print(yahoo['list']['resources'][0]['resource']['fields']['price'])
 				company=json_data['latestData'][0]
 				try :
 					company=json_data['latestData'][0]
 					c=Stock_data.objects.get(symbol='CNX NIFTY')
+					print("Not this problem!")
 					c.current_price=yahoo['list']['resources'][symbolmap['CNX NIFTY']]['resource']['fields']['price']
 					c.high=company['high'].replace(",","")
 					c.low=company['low'].replace(",","")
@@ -328,6 +356,7 @@ def stockdata():
 					c.trade_Value=json_data['trdValueSum'].replace(",","")
 					c.save() 	
 				except Stock_data.DoesNotExist :
+					print("--Stock_data.DoesNotExist--1")
 					c=Stock_data(symbol=company['indexName'],current_price=company['ltp'].replace(",",""),high=company['high'].replace(",",""),low=company['low'].replace(",",""),open_price=company['open'].replace(",",""),change=company['ch'].replace(",",""),change_per=company['per'].replace(",",""),trade_Qty=json_data['trdVolumesum'].replace(",",""),trade_Value=json_data['trdValueSum'].replace(",",""))
 					c.save()		    		
 				for company in json_data['data']:
@@ -341,10 +370,11 @@ def stockdata():
 						c.change_per=company['per'].replace(",","")
 						c.trade_Qty=company['trdVol'].replace(",","")
 						c.trade_Value=company['ntP'].replace(",","")
-				    		c.save()
+						c.save()
 				    	except Stock_data.DoesNotExist :
-						c=Stock_data(symbol=company['symbol'],current_price=company['ltP'].replace(",",""),high=company['high'].replace(",",""),low=company['low'].replace(",",""),open_price=company['open'].replace(",",""),change=company['ptsC'].replace(",",""),change_per=company['per'].replace(",",""),trade_Qty=company['trdVol'].replace(",",""),trade_Value=company['ntP'].replace(",",""))
-						c.save()		    		
+				    		print("--Stock_data.DoesNotExist--")
+				    		c=Stock_data(symbol=company['symbol'],current_price=company['ltP'].replace(",",""),high=company['high'].replace(",",""),low=company['low'].replace(",",""),open_price=company['open'].replace(",",""),change=company['ptsC'].replace(",",""),change_per=company['per'].replace(",",""),trade_Qty=company['trdVol'].replace(",",""),trade_Value=company['ntP'].replace(",",""))
+				    		c.save()		    		
 			except urllib2.HTTPError, e:
     				print e.fp.read()
 
@@ -354,56 +384,57 @@ def stockdata():
 def oldstockdata():
 	symbolmap={}
 	symbolmap['CNX NIFTY']=0                        
-	symbolmap['TECHM']=1                        
-	symbolmap['BPCL']=2                        
-	symbolmap['HEROMOTOCO']=3                        
-	symbolmap['BAJAJ-AUTO']=4                        
-	symbolmap['HINDUNILVR']=5                        
-	symbolmap['LUPIN']=6                        
-	symbolmap['POWERGRID']=7                        
-	symbolmap['ITC']=8                        
-	symbolmap['GAIL']=9                        
-	symbolmap['NTPC']=10                        
-	symbolmap['TCS']=11                        
-	symbolmap['ULTRACEMCO']=12                        
-	symbolmap['IDEA']=13                        
-	symbolmap['M&M']=14                        
-	symbolmap['INFY']=15                        
-	symbolmap['CIPLA']=16                        
-	symbolmap['WIPRO']=17                        
-	symbolmap['HDFC']=18                        
-	symbolmap['CAIRN']=19                        
-	symbolmap['MARUTI']=20                        
-	symbolmap['RELIANCE']=21                        
-	symbolmap['BHARTIARTL']=22                        
-	symbolmap['ZEEL']=23                        
-	symbolmap['ONGC']=24                        
-	symbolmap['LT']=25                        
-	symbolmap['ASIANPAINT']=26                        
-	symbolmap['PNB']=27                        
-	symbolmap['TATAPOWER']=28                        
-	symbolmap['COALINDIA']=29                        
-	symbolmap['BHEL']=30                        
-	symbolmap['DRREDDY']=31                        
-	symbolmap['YESBANK']=32                        
-	symbolmap['SUNPHARMA']=33                        
-	symbolmap['GRASIM']=34                        
-	symbolmap['AXISBANK']=35                        
-	symbolmap['AMBUJACEM']=36                        
-	symbolmap['BANKBARODA']=37                        
-	symbolmap['TATASTEEL']=38                        
-	symbolmap['KOTAKBANK']=39                        
-	symbolmap['NMDC']=40                        
-	symbolmap['INDUSINDBK']=41                        
-	symbolmap['HDFCBANK']=42                        
-	symbolmap['VEDL']=43                        
-	symbolmap['BOSCHLTD']=44                        
-	symbolmap['ACC']=45                        
-	symbolmap['TATAMOTORS']=46                        
-	symbolmap['HCLTECH']=47                        
-	symbolmap['ICICIBANK']=48                        
-	symbolmap['SBIN']=49                        
-	symbolmap['HINDALCO']=50                        
+	symbolmap['INFY'] = 1
+	symbolmap['TECHM'] = 2
+	symbolmap['TCS'] = 3
+	symbolmap['RELIANCE'] = 4
+	symbolmap['HCLTECH'] = 5
+	symbolmap['WIPRO'] = 6
+	symbolmap['COALINDIA'] = 7
+	symbolmap['KOTAKBANK'] = 8
+	symbolmap['HDFCBANK'] = 9
+	symbolmap['EICHERMOT'] = 10
+	symbolmap['HDFC'] = 11
+	symbolmap['ASIANPAINT'] = 12
+	symbolmap['IDEA'] = 13
+	symbolmap['HINDUNILVR'] = 14
+	symbolmap['BHARTIARTL'] = 15
+	symbolmap['MARUTI'] = 16
+	symbolmap['SUNPHARMA'] = 17
+	symbolmap['CIPLA'] = 18
+	symbolmap['POWERGRID'] = 19
+	symbolmap['ONGC'] = 20
+	symbolmap['GRASIM'] = 21
+	symbolmap['INDUSINDBK'] = 22
+	symbolmap['DRREDDY'] = 23
+	symbolmap['ICICIBANK'] = 24
+	symbolmap['HEROMOTOCO'] = 25
+	symbolmap['ULTRACEMCO'] = 26
+	symbolmap['GAIL'] = 27
+	symbolmap['INFRATEL'] = 28
+	symbolmap['LUPIN'] = 29
+	symbolmap['ITC'] = 30
+	symbolmap['AUROPHARMA'] = 31
+	symbolmap['BAJAJ-AUTO'] = 32
+	symbolmap['BOSCHLTD'] = 33
+	symbolmap['ZEEL'] = 34
+	symbolmap['TATAMTRDVR'] = 35
+	symbolmap['M&M'] = 36
+	symbolmap['TATAMOTORS'] = 37
+	symbolmap['AXISBANK'] = 38
+	symbolmap['LT'] = 39
+	symbolmap['NTPC'] = 40
+	symbolmap['BPCL'] = 41
+	symbolmap['TATAPOWER'] = 42
+	symbolmap['SBIN'] = 43
+	symbolmap['BHEL'] = 44
+	symbolmap['ACC'] = 45
+	symbolmap['ADANIPORTS'] = 46
+	symbolmap['AMBUJACEM'] = 47
+	symbolmap['TATASTEEL'] = 48
+	symbolmap['BANKBARODA'] = 49
+	symbolmap['YESBANK'] = 50
+	symbolmap['HINDALCO'] = 51                        
 	now = datetime.datetime.now()
 	if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
 		start_time=datetime.time(hour=9,minute=15,second=00)
@@ -412,14 +443,14 @@ def oldstockdata():
 		if(start_time<now<end_time):
 			try :
 				url='http://nseindia.com/live_market/dynaContent/live_watch/stock_watch/niftyStockWatch.json'
-				CNames = 'TECHM.NS,BPCL.NS,HEROMOTOC.NS,BAJAJ-AUTO-EQ.NS,HINDUNILVR-EQ.NS,LUPIN.NS,POWERGRID.NS,ITC.NS,GAIL.NS,NTPC.NS,TCS.NS,ULTRACEMC.NS,IDEA.NS,M&M.NS,INFY.NS,CIPLA.NS,WIPRO.NS,HDFC.NS,CAIRN.NS,MARUTI.NS,RELIANCE.NS,BHARTIART.NS,ZEEL.NS,ONGC.NS,LT.NS,ASIANPAIN.NS,PNB.NS,TATAPOWER.NS,COALINDIA.NS,BHEL.NS,DRREDDY.NS,YESBANK.NS,SUNPHARMA.NS,GRASIM.NS,AXISBANK.NS,AMBUJACEM.NS,BANKBAROD.NS,TATASTEEL.NS,KOTAKBANK.NS,NMDC.NS,INDUSINDBK-EQ.NS,HDFCBANK.NS,VEDL-EQ.NS,BOSCHLTD.NS,ACC.NS,TATAMOTOR.NS,HCLTECH.NS,ICICIBANK.NS,SBIN.NS,HINDALCO.NS'
+				CNames = 'INFY.NS,TECHM.NS,TCS.NS,RELIANCE.NS,HCLTECH.NS,WIPRO.NS,COALINDIA.NS,KOTAKBANK.NS,HDFCBANK.NS,EICHERMOT.NS,HDFC.NS,ASIANPAIN.NS,IDEA.NS,HINDUNILVR-EQ.NS,BHARTIART.NS,MARUTI.NS,SUNPHARMA.NS,CIPLA.NS,POWERGRID.NS,ONGC.NS,GRASIM.NS,INDUSINDBK-EQ.NS,DRREDDY.NS,ICICIBANK.NS,HEROMOTOC.NS,ULTRACEMC.NS,GAIL.NS,INFRATEL.NS,LUPIN.NS,ITC.NS,AUROPHARM.NS,BAJAJ-AUTO-EQ.NS,BOSCHLTD.NS,ZEEL.NS,TATAMTRDVR.NS,M&M.NS,TATAMOTOR.NS,AXISBANK.NS,LT.NS,NTPC.NS,BPCL.NS,TATAPOWER.NS,SBIN.NS,BHEL.NS,ACC.NS,ADANIPORTS.NS,AMBUJACEM.NS,TATASTEEL.NS,BANKBAROD.NS,YESBANK.NS,HINDALCO.NS'
 				yurl='http://finance.yahoo.com/webservice/v1/symbols/%5Ensei,'+CNames+'/quote?format=json&view=detail'
-				hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-		'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-		'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-		'Accept-Encoding': 'none',
-		'Accept-Language': 'en-US,en;q=0.8',
-		'Connection': 'keep-alive'}
+				hdr = {'User-Agent': "Mozilla/5.0 (Linux; Android 6.0.1; MotoG3 Build/MPI24.107-55) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Mobile Safari/537.36",
+						'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+						'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+						'Accept-Encoding': 'none',
+						'Accept-Language': 'en-US,en;q=0.8',
+						'Connection': 'keep-alive'}
 				req = urllib2.Request(url, headers=hdr) 
 				response = urllib2.urlopen( req )
 				yreq = urllib2.Request(yurl, headers=hdr)
@@ -440,8 +471,24 @@ def oldstockdata():
 						c=Old_Stock_data(symbol=company['symbol'],current_price=yahoo['list']['resources'][symbolmap[company['symbol']]]['resource']['fields']['price'])
 						c.save()
 					except :
-				    		x=0	    		
+							print("Exception2")
+							x=0	    		
 			except urllib2.HTTPError, e:
     				print e.fp.read()
 
 
+
+
+
+
+
+
+
+'''
+ Before starting 
+ make following changes:
+ 	@line: 359
+ 		c=Stock_data(symbol=company['indexName'],..  ==> c=Stock_data(symbol='CNX,.. 
+
+
+ '''

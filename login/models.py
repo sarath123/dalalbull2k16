@@ -6,6 +6,8 @@ from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 from datetime import datetime
+
+## CHANGES: user_id changed: max_len:200 to 100
 class User(models.Model):
 	user_id=models.CharField(max_length=200,primary_key=True)
 	first_name=models.CharField(max_length=200)
@@ -15,11 +17,11 @@ class User(models.Model):
 		return self.user_id
 
 class Portfolio(models.Model):
-	user_id=models.CharField(max_length=200,primary_key=True)
-	cash_bal=models.DecimalField(max_digits=19, decimal_places=2, default=Decimal('100000'))
-	net_worth=models.DecimalField(max_digits=19, decimal_places=2, default=Decimal('0.00'),validators=[MinValueValidator(Decimal('0.00'))])
-	margin=models.DecimalField(max_digits=19, decimal_places=2, default=Decimal('0.00'))
-	no_trans=models.DecimalField(max_digits=19, decimal_places=0, default=Decimal('0'))
+	user_id = models.CharField(max_length=200,primary_key=True)
+	cash_bal = models.DecimalField(max_digits=19, decimal_places=2, default=Decimal('100000'))
+	net_worth = models.DecimalField(max_digits=19, decimal_places=2, default=Decimal('0.00'),validators=[MinValueValidator(Decimal('0.00'))])
+	margin = models.DecimalField(max_digits=19, decimal_places=2, default=Decimal('0.00'))
+	no_trans = models.DecimalField(max_digits=19, decimal_places=0, default=Decimal('0'))
 	def _str_(self):
 		return self.user_id
 

@@ -3,6 +3,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie,csrf_exempt
 from django.views.decorators.cache import never_cache 
 from django.http import HttpResponse,HttpResponseForbidden
 from django.shortcuts import redirect,render_to_response
+from django.shortcuts import render
 from dalalbull import settings
 from pytz import timezone
 import urllib2
@@ -14,23 +15,34 @@ from django.template import RequestContext, loader
 from .models import User,Portfolio,Stock_data,Transaction,History,Pending,Old_Stock_data
 #======Index Page======#
 @ensure_csrf_cookie
+
 def index(request):
+
+    '''
     context=RequestContext(request)
     template=loader.get_template('login/index.html')
     request.session['login']=1
     return HttpResponse(template.render(context))
+    '''
+
+    return render(request,'login/index.html')
 
 #======Login======#
 @ensure_csrf_cookie
 def login(request):
     context=RequestContext(request)
     if(('login' in request.session) and request.session['login']==1):
-        u = User(user_id=request.POST['username'], first_name=request.POST['firstname'], last_name=request.POST['lastname'], email=request.POST['email'],)
+        u = User(user_id=request.POST['username'],
+        first_name=request.POST['firstname'],
+        last_name=request.POST['lastname'],
+        email=request.POST['email'],)
         u.save()
         try:
             p = Portfolio.objects.get(user_id=request.POST['username'])
         except Portfolio.DoesNotExist :
-            p = Portfolio(user_id=request.POST['username'],net_worth=1000000.00,cash_bal=1000000.00)
+            p = Portfolio(user_id=request.POST['username'],
+                net_worth=1000000.00,
+                cash_bal=1000000.00)
             p.save()
         request.session['username'] = request.POST['username']
         request.session['dashboard']=1
@@ -112,8 +124,13 @@ def aboutus(request):
         #request.session['faq']=0
         context=RequestContext(request)
         template=loader.get_template('faq/template.html')
-        return render_to_response('faq/template.html',{'username': request.session['username'],'name' : username,})
+        return render_to_response('faq/template.html',
+            {'username': request.session['username'],
+            'name' : username,}
+            )
     return  HttpResponseForbidden("Access Denied")
+
+    
 #======STOCKINFO======#
 @csrf_exempt
 def stockinfo(request):                            
@@ -129,7 +146,12 @@ def stockinfo(request):
         
         context=RequestContext(request)
         template=loader.get_template('dashboard/stockinformation.html')
-        return render_to_response('dashboard/stockinformation.html',{'username': request.session['username'],'name' : username,'companies' : companies})
+        return render_to_response('dashboard/stockinformation.html',{
+            'username': request.session['username'],
+            'name' : username,
+            'companies' : companies
+            }
+            )
     return  redirect('index')
 #======Company Info=====#
 @csrf_exempt
@@ -173,7 +195,14 @@ def buy(request):
                 companies.append(c)
         except Stock_data.DoesNotExist :
             print "error"
-        return render_to_response('dashboard/buy.html',{'name' : User.objects.get(user_id=request.session['username']).first_name ,'username': request.session['username'],'companies': companies ,'cclose' :True,'time' : datetime.datetime.now(),})
+        return render_to_response('dashboard/buy.html',{
+            'name' : User.objects.get(user_id=request.session['username']).first_name ,
+            'username': request.session['username'],
+            'companies': companies ,
+            'cclose' :cclose,
+            'time' : datetime.datetime.now(),
+            }
+            )
     return redirect('index')
 
 #======Submit-Buy======#
@@ -390,15 +419,17 @@ def sell(request):
                 k+=1    
             data_array['size']=k
             symbols=False
+
             if(len(transactions)>0):
                 symbols = True
             else:
                 no_stock=True
+
             d=json.dumps(data_array,cls=DjangoJSONEncoder)
         except Transaction.DoesNotExist:
             no_stock=True 
 
-        return render_to_response('dashboard/sell.html',{'name' : User.objects.get(user_id=request.session['username']).first_name ,'username': request.session['username'],'cclose' : True,'time' : datetime.datetime.now(),'no_stock': no_stock,'trans':transactions,'symbols' : symbols,'data' : d,})
+        return render_to_response('dashboard/sell.html',{'name' : User.objects.get(user_id=request.session['username']).first_name ,'username': request.session['username'],'cclose' : cclose,'time' : datetime.datetime.now(),'no_stock': no_stock,'trans':transactions,'symbols' : symbols,'data' : d,})
     return redirect('index')
 
 

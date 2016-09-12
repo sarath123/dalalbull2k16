@@ -81,9 +81,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'dalalbull',
-        'USER': 'root',
+        'USER': 'username' ,
         'PASSWORD': 'password',
-        'HOST': '',                      # Empty for localhost through domain sockets or           '127.0.0.1' for localhost through TCP.
+        #'HOST': '',                      # Empty for localhost through domain sockets or           '127.0.0.1' for localhost through TCP.
     }
 }
 
@@ -93,7 +93,7 @@ DATABASES = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -116,10 +116,33 @@ CELERY_IMPORTS = ('login.tasks', )
 ## Using the database to store task state and results.
 CELERY_RESULT_BACKEND = 'db+sqlite:///results.db'
 
-CELERY_ANNOTATIONS = {'tasks.tq': {'rate_limit': '10/s'},'tasks.dq': {'rate_limit': '10/s'}}
+CELERY_ANNOTATIONS = {'tasks.tq': {'rate_limit': '10/s'},
+                    'tasks.dq': {'rate_limit': '10/s'}}
 
 from datetime import timedelta
 
+
+CELERYBEAT_SCHEDULE = {
+    'net-every-20second': {
+            'task': 'login.tasks.net',
+            'schedule': timedelta(seconds=20),
+            'args': ()
+     },
+    'dq-every-second': {
+            'task': 'login.tasks.dq',
+            'schedule': timedelta(seconds=1),
+            'args': ()
+     },
+    'tq-every-20second': {
+            'task': 'login.tasks.tq',
+            'schedule': timedelta(seconds=100),
+            'args': ()
+     },
+}
+
+
+
+'''
 
 CELERYBEAT_SCHEDULE = {
     'net-every-20second': {
@@ -138,3 +161,4 @@ CELERYBEAT_SCHEDULE = {
             'args': ()
      },
 }
+'''
