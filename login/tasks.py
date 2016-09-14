@@ -8,6 +8,7 @@ import json
 import datetime
 from .models import User,Portfolio,Stock_data,Transaction,History,Pending,Old_Stock_data
 
+from login.consumers import niftyChannelDataPush,leaderboardChannelDataPush,graphDataPush,portfolioDataPush
 
 ###-----------
 import celery
@@ -36,27 +37,56 @@ def say_hello():
 
 @shared_task
 def tq(): 
+	
 	print("Stock Update");	
 	stockdata()
 	print("Orders");	
 	orders()
-	#print("Networth Update");	
-	#networth()
+	##print("Networth Update");	
+	##networth()
 	return 
 
 @shared_task
 def dq(): 
 	print("Graph Values Update");
 	oldstockdata()
-	#print("Networth Update");
-	#networth()
+	##print("Networth Update");
+	##networth()
 	return 
 
 @shared_task
 def net():
-        print("Networth Update");
-        networth()
+    print("Networth Update");
+    networth()
+    return
+
+
+@shared_task
+def broadcastNiftyData():
+	print("Nifty data broadcasted!")
+	niftyChannelDataPush()
 	return
+
+@shared_task
+def broadcastLeaderboardData():
+	print("Leaderboard data broadcasted!")
+	leaderboardChannelDataPush()
+	return
+
+@shared_task
+def broadcastGraphData():
+	print("Grap data broadcasted!")
+	graphDataPush()
+	return
+
+
+
+@shared_task
+def broadcastPortfolioData():
+	print("Portfolio data broadcasted!")
+	portfolioDataPush()
+	return
+
 #==========Utility Functions========#
 				
 #==========Sell/Short-Cover========#        
@@ -263,7 +293,7 @@ def networth():
 def stockdata():
 
 	symbolmap={}
-	symbolmap['CNX NIFTY']=0                        
+	symbolmap['NIFTY 50']=0                        
 	symbolmap['INFY'] = 1
 	symbolmap['TECHM'] = 2
 	symbolmap['TCS'] = 3
@@ -319,9 +349,10 @@ def stockdata():
 
 	if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
 		start_time=datetime.time(hour=9,minute=15,second=00)
-		end_time=datetime.time(hour=23,minute=30,second=00)  #hour = 15
+		end_time=datetime.time(hour=15,minute=30,second=00)  #hour = 15
 		now = datetime.datetime.now().time()
-		if(start_time<now<end_time):
+		#if(start_time<now<end_time):
+		if True:
 			try :
 				url='http://nseindia.com/live_market/dynaContent/live_watch/stock_watch/niftyStockWatch.json'
 				CNames = 'INFY.NS,TECHM.NS,TCS.NS,RELIANCE.NS,HCLTECH.NS,WIPRO.NS,COALINDIA.NS,KOTAKBANK.NS,HDFCBANK.NS,EICHERMOT.NS,HDFC.NS,ASIANPAIN.NS,IDEA.NS,HINDUNILVR-EQ.NS,BHARTIART.NS,MARUTI.NS,SUNPHARMA.NS,CIPLA.NS,POWERGRID.NS,ONGC.NS,GRASIM.NS,INDUSINDBK-EQ.NS,DRREDDY.NS,ICICIBANK.NS,HEROMOTOC.NS,ULTRACEMC.NS,GAIL.NS,INFRATEL.NS,LUPIN.NS,ITC.NS,AUROPHARM.NS,BAJAJ-AUTO-EQ.NS,BOSCHLTD.NS,ZEEL.NS,TATAMTRDVR.NS,M&M.NS,TATAMOTOR.NS,AXISBANK.NS,LT.NS,NTPC.NS,BPCL.NS,TATAPOWER.NS,SBIN.NS,BHEL.NS,ACC.NS,ADANIPORTS.NS,AMBUJACEM.NS,TATASTEEL.NS,BANKBAROD.NS,YESBANK.NS,HINDALCO.NS'
@@ -344,9 +375,9 @@ def stockdata():
 				company=json_data['latestData'][0]
 				try :
 					company=json_data['latestData'][0]
-					c=Stock_data.objects.get(symbol='CNX NIFTY')
+					c=Stock_data.objects.get(symbol='NIFTY 50')
 					print("Not this problem!")
-					c.current_price=yahoo['list']['resources'][symbolmap['CNX NIFTY']]['resource']['fields']['price']
+					c.current_price=yahoo['list']['resources'][symbolmap['NIFTY 50']]['resource']['fields']['price']
 					c.high=company['high'].replace(",","")
 					c.low=company['low'].replace(",","")
 					c.open_price=company['open'].replace(",","")
@@ -383,7 +414,7 @@ def stockdata():
 
 def oldstockdata():
 	symbolmap={}
-	symbolmap['CNX NIFTY']=0                        
+	symbolmap['NIFTY 50']=0                        
 	symbolmap['INFY'] = 1
 	symbolmap['TECHM'] = 2
 	symbolmap['TCS'] = 3
@@ -462,17 +493,20 @@ def oldstockdata():
 				company=json_data['latestData'][0]
 				try :
 					company=json_data['latestData'][0]
-					c=Old_Stock_data(symbol="CNX NIFTY",current_price=yahoo['list']['resources'][symbolmap['CNX NIFTY']]['resource']['fields']['price'])
+					c=Old_Stock_data(symbol="NIFTY 50",
+						current_price=yahoo['list']['resources'][symbolmap['NIFTY 50']]['resource']['fields']['price'])
 					c.save() 	
 				except :
 				    print("Exception1")	    		
 				for company in json_data['data']:
 					try :					
-						c=Old_Stock_data(symbol=company['symbol'],current_price=yahoo['list']['resources'][symbolmap[company['symbol']]]['resource']['fields']['price'])
+						c=Old_Stock_data(symbol=company['symbol'],
+							current_price=yahoo['list']['resources'][symbolmap[company['symbol']]]['resource']['fields']['price']
+							)
 						c.save()
 					except :
-							print("Exception2")
-							x=0	    		
+						print("Exception2")
+						x=0	    		
 			except urllib2.HTTPError, e:
     				print e.fp.read()
 
@@ -489,6 +523,4 @@ def oldstockdata():
  make following changes:
  	@line: 359
  		c=Stock_data(symbol=company['indexName'],..  ==> c=Stock_data(symbol='CNX,.. 
-
-
- '''
+'''

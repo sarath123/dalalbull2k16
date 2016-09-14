@@ -39,7 +39,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'login',
     'djcelery',
-    'kombu.transport.django'
+    'kombu.transport.django',
+    'channels'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -117,30 +118,75 @@ CELERY_IMPORTS = ('login.tasks', )
 CELERY_RESULT_BACKEND = 'db+sqlite:///results.db'
 
 CELERY_ANNOTATIONS = {'tasks.tq': {'rate_limit': '10/s'},
-                    'tasks.dq': {'rate_limit': '10/s'}}
+                    'tasks.dq': {'rate_limit': '10/s'},
+                    'task.broadcastNiftyData': {'rate_limit': '1/s'}
+                    }
 
 from datetime import timedelta
 
 
 CELERYBEAT_SCHEDULE = {
-    'net-every-20second': {
+    'net-every-20-seconds': {
             'task': 'login.tasks.net',
             'schedule': timedelta(seconds=20),
             'args': ()
      },
-    'dq-every-second': {
+    'dq-every-3-seconds': {
             'task': 'login.tasks.dq',
-            'schedule': timedelta(seconds=1),
+            'schedule': timedelta(seconds=3),
             'args': ()
      },
-    'tq-every-20second': {
+    'tq-every-2-seconds': {
             'task': 'login.tasks.tq',
-            'schedule': timedelta(seconds=100),
+            'schedule': timedelta(seconds=2), ##2
+            'args': ()
+     },
+     'broadcastNiftyData-every-2-seconds': {
+            'task': 'login.tasks.broadcastNiftyData',
+            'schedule': timedelta(seconds=2),
+            'args': ()
+     },
+     'broadcastLeaderboardData-every-5-seconds': {
+            'task': 'login.tasks.broadcastLeaderboardData',
+            'schedule': timedelta(seconds=5),
+            'args': ()
+     },
+     'broadcastGraphData-every-5-seconds': {
+            'task': 'login.tasks.broadcastGraphData',
+            'schedule': timedelta(seconds=5),
+            'args': ()
+     },
+     'broadcastPortfolioData-every-2-seconds': {
+            'task': 'login.tasks.broadcastPortfolioData',
+            'schedule': timedelta(seconds=2),
             'args': ()
      },
 }
 
 
+
+
+
+
+
+
+
+
+# ================  CHANNELS SETTINGS ================ #
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+        },
+        "ROUTING": "login.routing.channel_routing",
+    },
+}
+
+
+# ==================================================== #
 
 '''
 

@@ -15,7 +15,6 @@ from django.template import RequestContext, loader
 from .models import User,Portfolio,Stock_data,Transaction,History,Pending,Old_Stock_data
 #======Index Page======#
 @ensure_csrf_cookie
-
 def index(request):
 
     '''
@@ -28,93 +27,132 @@ def index(request):
     return render(request,'login/index.html')
 
 #======Login======#
+
+
 @ensure_csrf_cookie
 def login(request):
-    context=RequestContext(request)
-    if(('login' in request.session) and request.session['login']==1):
-        u = User(user_id=request.POST['username'],
-        first_name=request.POST['firstname'],
-        last_name=request.POST['lastname'],
-        email=request.POST['email'],)
-        u.save()
+    user_id = request.POST['username']
+    success = False
+    if not User.objects.filter(user_id=user_id).exists():
+
         try:
-            p = Portfolio.objects.get(user_id=request.POST['username'])
-        except Portfolio.DoesNotExist :
-            p = Portfolio(user_id=request.POST['username'],
+            User.objects.create(user_id = request.POST['username'],
+                first_name = request.POST['firstname'],
+                last_name = request.POST['lastname'],
+                email = request.POST['email'],)
+            
+            Portfolio.objects.create(
+                user_id=request.POST['username'],
                 net_worth=1000000.00,
-                cash_bal=1000000.00)
-            p.save()
+                cash_bal=1000000.00,)
+
+            print("New user created!")
+            success = True
+        except:
+            print("Invalid Post data!")
+            pass
+
+    else:
+        print("User already exists!")
+        success = True
+
+    if success:
         request.session['username'] = request.POST['username']
-        request.session['dashboard']=1
+        request.session['login'] = 1
         return HttpResponse('success')
-    return  redirect('index')
+    else:
+        return  redirect('index')
+
 
 #======Dashboard======#
 @ensure_csrf_cookie
 @never_cache
 def dashboard(request):
-    context=RequestContext(request)
-    if(('dashboard' in request.session) and request.session['dashboard']==1):
-        request.session['faq']=1
-        request.session['buy']=1
-        request.session['sell']=1
-        request.session['history']=1
-        request.session['pending']=1
-        request.session['stockinfo']=1
-        request.session['aboutus']=1
-        username='None'
-        net_worth = 0
-        cash_bal = 0
-        cash_avail = 0
-        rank = 0
-        total_no = 0
-        margin=0
-        transactions=0
+    
+    if 'login' in request.session:
+
         stockholdings=False
         nifty=0
         change=0
+        
+        username=User.objects.get(user_id=request.session['username']).first_name+" "+User.objects.get(user_id=request.session['username']).last_name
+        portfolio = Portfolio.objects.get(user_id=request.session['username'])
+        net_worth = portfolio.net_worth
+        cash_bal = float(portfolio.cash_bal)
+        if((portfolio.cash_bal-portfolio.margin)>0):
+            cash_avail = float(cash_bal) - float(portfolio.margin)
+        margin = portfolio.margin
+        rank = getRank(portfolio.user_id)
+        total_no = User.objects.count()
+        transactions=portfolio.no_trans
+
         try:
-            username=User.objects.get(user_id=request.session['username']).first_name+" "+User.objects.get(user_id=request.session['username']).last_name
-            portfolio = Portfolio.objects.get(user_id=request.session['username'])
-            net_worth = portfolio.net_worth
-            cash_bal = float(portfolio.cash_bal)
-            if((portfolio.cash_bal-portfolio.margin)>0):
-                cash_avail = float(cash_bal) - float(portfolio.margin)
-            margin = portfolio.margin
-            rank = getRank(portfolio.user_id)
-            total_no = len(User.objects.all())
-            transactions=portfolio.no_trans
-        except Portfolio.DoesNotExist:
-            print("User DoesNotExist")
-        try:
-            stock=Stock_data.objects.get(symbol='CNX NIFTY')
+            stock=Stock_data.objects.get(symbol='NIFTY 50')
             nifty = stock.current_price
             change = stock.change
         except Stock_data.DoesNotExist:
             print("No Such Stock")
-        p=Portfolio.objects.all().order_by('-net_worth')
-        l=[]
-        for s in p:
-            u=User.objects.get(user_id=s.user_id)
-            user={'user_id':s.user_id,'name': u.first_name+" "+u.last_name,'net_worth': s.net_worth}        
-            l.append(user)
 
-        if(len(Transaction.objects.filter(user_id=request.session['username']))!=0):
+
+        portfolios = Portfolio.objects.all().order_by('-net_worth')[:10]                   #selecting only top 10
+        leaderBoardData = []
+
+        for p in portfolios:
+            u = User.objects.get(user_id=p.user_id)
+            user = {
+                'user_id':p.user_id,
+                'name': u.first_name+" "+u.last_name,
+                'net_worth': p.net_worth
+                }        
+            leaderBoardData.append(user)
+
+        if Transaction.objects.filter(user_id=request.session['username']).exists():
             stockholdings=True
-        template=loader.get_template('dashboard/index.html')
-        return render_to_response('dashboard/index.html',{'user_id': request.session['username'],'username' : username,'net_worth': float(net_worth),'leaderboard' : l,'rank': rank,'total_no' : total_no,'margin': float(margin),'transactions': transactions,'nifty': nifty,'change':float(change),'cash_bal':float(cash_bal),'cash_avail': float(cash_avail),'stockexist' : stockholdings,'stockholdings':getStockholdings(request.session['username']),'topGainers' : getTopGainers(),'topLosers' : getTopLosers(),'mostActiveVol' : getMostActiveVolume,'mostActiveVal' : getMostActiveValue(),})
-    return  redirect('index')
+
+
+        data = {
+            'user_id': request.session['username'],
+            'username' : username,
+            'net_worth': float(net_worth),
+            'leaderboard' : leaderBoardData,
+            'rank': rank,
+            'total_no' : total_no,
+            'margin': float(margin),
+            'transactions': transactions,
+            'nifty': nifty,
+            'change':float(change),
+            'cash_bal':float(cash_bal),
+            'cash_avail': float(cash_avail),
+            'stockexist' : stockholdings,
+            'stockholdings':getStockholdings(request.session['username']),
+            'topGainers' : getTopGainers(),
+            'topLosers' : getTopLosers(),
+            'mostActiveVol' : getMostActiveVolume,
+            'mostActiveVal' : getMostActiveValue(),
+        }
+
+        return render(request,'dashboard/index.html',data)
+    
+    else:
+        return  redirect('index')
     
     
 #======FAQ======#
+
+# -----------    really? is this view needed? -------------------- #
 @ensure_csrf_cookie
 def faq(request):                            
-    if(('faq' in request.session) and request.session['faq']==1):
+    if 'login' in request.session:
+
         username=User.objects.get(user_id=request.session['username']).first_name
-        #request.session['faq']=0
-        context=RequestContext(request)
-        template=loader.get_template('faq/faq.html')
-        return render_to_response('faq/faq.html',{'username': request.session['username'],'name' : username,})
+
+        data = {
+        'username': request.session['username'],
+        'name' : username,
+        }
+
+        return render(request,'faq/faq.html',data)
+
     return  HttpResponseForbidden("Access Denied")
 
 @ensure_csrf_cookie
@@ -134,7 +172,7 @@ def aboutus(request):
 #======STOCKINFO======#
 @csrf_exempt
 def stockinfo(request):                            
-    if(('stockinfo' in request.session) and request.session['stockinfo']==1):
+    if 'login' in request.session:
         username=User.objects.get(user_id=request.session['username']).first_name
         try:
             stocks=Stock_data.objects.all()
@@ -155,9 +193,9 @@ def stockinfo(request):
     return  redirect('index')
 #======Company Info=====#
 @csrf_exempt
-def companydetails(request):
+def companydetails(request):                                #TESTED
     company = request.POST['company']
-    graph_data={}
+    graph_data = {}
     values=Stock_data.objects.get(symbol=company)
     graph_data['company']=values.symbol
     graph_data['current_price']=values.current_price
@@ -174,35 +212,29 @@ def companydetails(request):
 #======Buy/Short-Sell======#
 @ensure_csrf_cookie
 def buy(request):                       
-    if(('buy' in request.session) and request.session['buy']==1):
-        context=RequestContext(request) 
-        cclose=True
-        now = datetime.datetime.now()
-        if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
-            start_time=datetime.time(hour=9,minute=15,second=00)
-            end_time=datetime.time(hour=15,minute=30,second=00)
-            now = datetime.datetime.now().time()
-            if(start_time<now<end_time):
-                cclose=False
+    if 'login' in request.session:
+        #context=RequestContext(request) 
+        cclose = isWrongTime()
+
+        #p = Portfolio.objects.get(user_id=request.session['username'])
+        
         try:
-            p = Portfolio.objects.get(user_id=request.session['username'])
-        except Portfolio.DoesNotExist :
-            print("error")
-        try:
-            stocks=Stock_data.objects.all()
+            stocks = Stock_data.objects.all()
             companies=[]
             for c in stocks:
                 companies.append(c)
         except Stock_data.DoesNotExist :
             print "error"
-        return render_to_response('dashboard/buy.html',{
+
+        data = {
             'name' : User.objects.get(user_id=request.session['username']).first_name ,
             'username': request.session['username'],
             'companies': companies ,
-            'cclose' :cclose,
+            'cclose' : cclose,
             'time' : datetime.datetime.now(),
             }
-            )
+        return render(request,'dashboard/buy.html',data)
+    
     return redirect('index')
 
 #======Submit-Buy======#
@@ -214,14 +246,19 @@ def submit_buy(request):
     margin=0
     data=request.POST
     if(len(data)!=0):
+
         qnty_test = data['quantity']
+
         if(not is_number(qnty_test)):
             quantity_invalid=True
         else:
             qnty_test=int(float(data['quantity']))
             if(qnty_test <= 0):
                 quantity_invalid=True
-        if(not quantity_invalid):
+
+
+        if not quantity_invalid :
+
             company=data['company'] 
             if(company != "none" and company !="" ):
                 quantity=qnty_test
@@ -245,7 +282,9 @@ def submit_buy(request):
                             brokerage=((1/100)*current_price)*float(quantity)
                     else :                      
                             brokerage=((1.5/100)*current_price)*float(quantity)
-                    if(quantity_invalid or b_ss=="" or company=='CNX NIFTY'):
+
+
+                    if(quantity_invalid or b_ss=="" or company=='NIFTY 50'):
                         msg= "<strong>Invalid Data</strong><br><br>"
                     else :                          
                         if((pending_price!="") and current_price!=pending_price):
@@ -356,23 +395,17 @@ def submit_buy(request):
 #=======Sell/Short-Cover=====#
 @ensure_csrf_cookie
 def sell(request):                      
-    if(('sell' in request.session) and request.session['sell']==1):
+    if 'login' in request.session:
         #request.session['sell']=0
-        context=RequestContext(request) 
-        cclose=True
+        #context=RequestContext(request) 
+        cclose = isWrongTime()
         no_stock=False
         transactions=[]
         data={}
         data_array={}
         d=[]
         k=0
-        now = datetime.datetime.now()
-        if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
-            start_time=datetime.time(hour=9,minute=15,second=00)
-            end_time=datetime.time(hour=15,minute=30,second=00)
-            now = datetime.datetime.now().time()
-            if(start_time<now<end_time):
-                cclose=False
+
         try:
             t = Transaction.objects.filter(user_id=request.session['username'])
             for i in t:
@@ -387,28 +420,38 @@ def sell(request):
                     temp['id']='Buy'
                 else:
                     temp['id']='Short'
+
                 temp['tr']= temp['tr']+"<tr id="+str(temp['symbol'])+str(temp['id'])+"><td>"+str(temp['symbol'])+"</td><td>"+str(temp['buy_ss'])+"</td><td>"+str(temp['old_quantity'])+"</td><td>"
                 try:
                     s=Stock_data.objects.get(symbol=temp['symbol'])
                     temp['tr']+=(str(s.current_price)+'</td>')
                 except Stock_data.DoesNotExist:
                     temp['tr']+='Not Listed'
+
+
                 if(temp['buy_ss']=='Buy'):
                     temp['profit']=float(s.current_price)-(temp['old_value']/temp['old_quantity'])
                 else:
                     temp['profit']=(temp['old_value']/temp['old_quantity'])-float(s.current_price)
+                
+
                 temp['prof_per']=(temp['profit']/(temp['old_value']/temp['old_quantity']))*100
+                
                 if(temp['prof_per']>0):
                     temp['clrclss']='uptrend'
                 elif(temp['prof_per']<0):
                     temp['clrclss']='dwntrend'
                 else:
                     temp['clrclss']=''
+                
+
                 temp['tr']+=('<td class='+str(temp['clrclss'])+'>'+str(temp['prof_per'])+'</td>')
+                
                 if(temp['buy_ss']=='Buy'):
                     temp['disp']='Sell'
                 else:
                     temp['disp']='Short Cover'
+                
                 temp['tr'] =temp['tr']+"<td><form id=\"s_sc"+str(k)+"\"name=\"s_sc\" action=\"\" method=\"POST\" style=\"margin-top:0px;\"><input type=\"hidden\" name=\"company\" value=\""+str(temp['symbol'])+"\"><input type=\"number\"  name=\"quantity\" value=\"\" placeholder=\"No of Shares to trade\" title=\"Integer less than or equal to Shares in hand\" style=\"width : 80%;\" class=\"s2 m2 l2 min=\"0\"\"><br><input id=\"pending\" type=\"number\" class=\"pull-right min=\"0\" \" name=\"pending\" placeholder=\"Pending price\" title=\"Leave blank if not making a pending order\" style=\"width : 80%;\" class=\"s12 m12 l2\"><input type=\"hidden\" name=\"tradeType\" value=\""+str(temp['disp'])+"\"><br><br><input id=\"submit_sc"+str(k)+"\" type=\"button\" class=\"button btn btn-orange \" name=\"submit_sc\" value=\""+str(temp['disp'])+"\" style=\"width : 80%;\"></td></form></tr>"
                 data['symbol']=temp['symbol']
                 data['buy_ss']=temp['buy_ss']
@@ -416,7 +459,8 @@ def sell(request):
                 data['old_value']=temp['old_value']
                 data_array[k]=data
                 transactions.append(temp)
-                k+=1    
+                k+=1  
+
             data_array['size']=k
             symbols=False
 
@@ -429,7 +473,17 @@ def sell(request):
         except Transaction.DoesNotExist:
             no_stock=True 
 
-        return render_to_response('dashboard/sell.html',{'name' : User.objects.get(user_id=request.session['username']).first_name ,'username': request.session['username'],'cclose' : cclose,'time' : datetime.datetime.now(),'no_stock': no_stock,'trans':transactions,'symbols' : symbols,'data' : d,})
+        data ={
+        'name' : User.objects.get(user_id=request.session['username']).first_name ,
+        'username': request.session['username'],
+        'cclose' : cclose,
+        'time' : datetime.datetime.now(),
+        'no_stock': no_stock,
+        'trans':transactions,
+        'symbols' : symbols,
+        'data' : d,
+        }
+        return render(request, 'dashboard/sell.html',data)
     return redirect('index')
 
 
@@ -455,17 +509,21 @@ def submit_sell(request):
             qnty_test=int(data['quantity'])
             if(qnty_test < 0):
                 quantity_invalid=True
+
+
         if(not quantity_invalid):
             company=data['company']
             quantity=float(data['quantity'])
             pending_price=data['pending']
             s_sc=data['tradeType']
+
             if(not is_number(pending_price)):
                 pp_invalid=True
             else:
                 pending_price=int(data['pending'])
                 if(pending_price < 0):
                     pp_invalid=True
+
             if(s_sc=="Sell"):
                 b_ss="Buy"
             else:
@@ -579,22 +637,30 @@ def submit_sell(request):
                 temp['tr']+=(str(s.current_price)+'</td>')
             except Stock_data.DoesNotExist:
                 temp['tr']+='Not Listed'
+            
+
             if(temp['buy_ss']=='Buy'):
                 temp['profit']=float(s.current_price)-(temp['old_value']/temp['old_quantity'])
             else:
                 temp['profit']=(temp['old_value']/temp['old_quantity'])-float(s.current_price)
+            
             temp['prof_per']=(temp['profit']/(temp['old_value']/temp['old_quantity']))*100
+            
             if(temp['prof_per']>0):
                 temp['clrclss']='uptrend'
             elif(temp['prof_per']<0):
-                temp['clrclss']='dwntrend'
+                temp['clrclss']='dwntrend'            
             else:
                 temp['clrclss']=''
+
+
             temp['tr']+=('<td class='+temp['clrclss']+'>'+str(temp['prof_per'])+'</td>')
+            
             if(temp['buy_ss']=='Buy'):
                 temp['disp']='Sell'
             else:
                 temp['disp']='Short Cover'
+            
             temp['tr'] = temp['tr']+"<td><form id=\"s_sc"+str(k)+"\"name=\"s_sc\" action=\"\" method=\"POST\" style=\"margin-top:0px;\"><input type=\"hidden\" name=\"company\" value=\""+temp['symbol']+"\"><input type=\"text\"  name=\"quantity\" value=\"\" placeholder=\"No+ of Shares to trade\" title=\"Interger less than or equal to Shares in hand+\" style=\"width:48%;float:left;\"><input id=\"pending\" type=\"text\" class=\"pull-right\" name=\"pending\" placeholder=\"Pending price\" title=\"Leave blank if not making a pending order+\"style=\"width:48%;float:left;\"><input type=\"hidden\" name=\"tradeType\" value=\""+temp['disp']+"\"><br><br><input id=\"submit_sc\""+str(k)+"\" type=\"button\" class=\"waves-effect waves-light btn yellow sellbutton\" name=\"submit_sc\" value=\""+temp['disp']+"\"></td></form></tr>"
             trow = trow+temp['tr']
             print trow
@@ -651,20 +717,14 @@ def sell_trend(request):
 
 #=======Cancel Pending Orders=====#
 @ensure_csrf_cookie
-def pending(request):                       
-    if(('pending' in request.session) and request.session['pending']==1):
-        #request.session['sell']=0
-        context=RequestContext(request) 
-        cclose=True
+def pending(request):   
+
+    if 'login' in request.session:
+        
+        cclose = isWrongTime()
         no_stock=False
         k=0
-        now = datetime.datetime.now()
-        if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
-            start_time=datetime.time(hour=9,minute=15,second=00)
-            end_time=datetime.time(hour=15,minute=30,second=00)
-            now = datetime.datetime.now().time()
-            if(start_time<now<end_time):
-                cclose=False
+        
         try:
             t = Pending.objects.filter(user_id=request.session['username'])
             row=[]
@@ -690,7 +750,17 @@ def pending(request):
         except Pending.DoesNotExist:
             no_stock=True 
 
-        return render_to_response('dashboard/pending.html',{'name' : User.objects.get(user_id=request.session['username']).first_name ,'username': request.session['username'],'cclose' : cclose,'time' : datetime.datetime.now(),'no_pending': True,'pending':row,})
+
+        data = {
+        'name' : User.objects.get(user_id=request.session['username']).first_name ,
+        'username': request.session['username'],
+        'cclose' : cclose,
+        'time' : datetime.datetime.now(),
+        'no_pending': False,    #was True
+        'pending':row,
+        }
+
+        return render(request,'dashboard/pending.html',data)
     return redirect('index')
 
 #=======Cancels========#
@@ -714,27 +784,23 @@ def cancels(request):
         msg="Invalid Data"
     d=json.dumps(msg,cls=DjangoJSONEncoder)
     return HttpResponse(d,content_type="application/json")
+
+
 #=======Leaderboard========#
 @csrf_exempt
 def leaderboard(request):
-    p=Portfolio.objects.all().order_by('-net_worth')
-    i=1
-    l=[]
-    for t in p:
-        u=User.objects.get(user_id=t.user_id)
-        user={'user_id':t.user_id,'name': u.first_name + " "+ u.last_name,'net_worth': float(t.net_worth)}      
-        l.append(user);
-        i+=1
-    data=json.dumps(l,cls=DjangoJSONEncoder)        
+    data = leaderboardData()        
     return HttpResponse(data,content_type="application/json")
+
+
 
 #=======History========#
 def history(request):
     notrans=False
     hf = []
-    if(('history' in request.session) and request.session['history']==1):
-        username=request.session['username']
-        hist=History.objects.filter(user_id=username)
+    if 'login' in request.session:
+        username = request.session['username']
+        hist = History.objects.filter(user_id=username)
         if(len(hist)==0):
             notrans=True
         else:
@@ -746,40 +812,28 @@ def history(request):
                 h['total']=float(i.quantity) * float(i.price) 
                 k+=1
                 hf.append(h)
-        return render_to_response('dashboard/history.html',{'name': User.objects.get(user_id=username).first_name,'username': username,'notrans' : True,'history' : hf,})
+
+        data = {
+        'name': User.objects.get(user_id=username).first_name,
+        'username': username,
+        'notrans' : False,          # was false
+        'history' : hf,
+        }
+
+        return render(request,'dashboard/history.html',data)
     return redirect('index')
+
+
+
+
 #======To Get Nifty Current Price======#
 
 @csrf_exempt
 def nifty(request):
+    data = niftyData()
+    return HttpResponse(data,content_type="application/json")
 
-    data=[] 
-    dat=[]
-    try:
-        nifty=Stock_data.objects.get(symbol='CNX NIFTY')
-        data.append(nifty.current_price)
-        data.append(nifty.change)
-        dat=json.dumps(data,cls=DjangoJSONEncoder)
-    except Stock_data.DoesNotExist:
-        print("No Such Stock")
-    return HttpResponse(dat,content_type="application/json")
-@csrf_exempt    
-def portfolio(request):
-    data=[]
-    dat=[]
-    try:
-        user=Portfolio.objects.get(user_id=request.POST['user_id'])
-        total_no=len(User.objects.all())
-        data.append(user.cash_bal)
-        data.append(user.net_worth)
-        data.append(user.margin)
-        data.append(total_no)
-        data.append(getRank(request.POST['user_id']))
-        data.append(user.user_id)
-        dat=json.dumps(data,cls=DjangoJSONEncoder)
-    except Portfolio.DoesNotExist:
-        print("User Not Found")
-    return HttpResponse(dat,content_type="application/json")
+   
 
 @csrf_exempt
 def unified(request):
@@ -788,7 +842,7 @@ def unified(request):
     try:
         u=User.objects.get(email=request.POST['email'])
         user=Portfolio.objects.get(user_id=u.user_id)
-        total_no=len(User.objects.all())
+        total_no = User.objects.count()                                 ###########
         data['cash_bal']=user.cash_bal
         data['net_worth']=user.net_worth
         data['margin']=user.margin
@@ -803,24 +857,48 @@ def unified(request):
 #======To Get Current Price======#
 def currPrice(request):
     username=request.session['username']
-
     msg=""
-    data=[] 
+
     comp =request.POST['comp']
     curr_price=Stock_data.objects.get(symbol=comp).current_price
     cash_bal=Portfolio.objects.get(user_id=username).cash_bal
     margin=Portfolio.objects.get(user_id=username).margin
     no_trans=Portfolio.objects.get(user_id=username).no_trans
-    data.append(curr_price)
-    data.append(cash_bal)
-    data.append(margin)
-    data.append(no_trans)
+
+    data = [ curr_price, cash_bal, margin, no_trans ]                    ###########
     dat=json.dumps(data,cls=DjangoJSONEncoder)
     return HttpResponse(dat,content_type="application/json")
-#======Graph======#
-@csrf_exempt
-def graph(request):
-    company = request.POST['company']
+
+
+
+
+    
+    
+#==========Utility Functions========#
+
+
+
+def portfolio(user_id):
+    data=[]
+    dat=[]
+
+    user=Portfolio.objects.get(user_id=user_id)
+    total_no = User.objects.count()                             ###########
+    data = [ user.cash_bal,
+    user.net_worth,
+    user.margin,
+    total_no,
+    getRank(user_id),
+    user.user_id
+    ]
+    dat=json.dumps(data,cls=DjangoJSONEncoder)
+
+    return dat
+
+
+
+
+def graph(company):
     graph_values=Old_Stock_data.objects.filter(symbol=company).order_by('time')
     graph_data=[]
     for i in graph_values:
@@ -832,10 +910,9 @@ def graph(request):
         temp.append(i.current_price)
         graph_data.append(temp)
     data=json.dumps(graph_data,cls=DjangoJSONEncoder)
-    return HttpResponse(data,content_type="application/json")
-    
-    
-#==========Utility Functions========#
+    return data
+
+
 def getStockholdings(user_id):
     stockholdings=[]
     transactions=Transaction.objects.filter(user_id=user_id)
@@ -851,11 +928,11 @@ def getStockholdings(user_id):
 
 def getTopGainers():
     gainers=[]
-    t=Stock_data.objects.all().order_by('-change_per')
+    t=Stock_data.objects.all().order_by('-change_per')[:6]                  ###########
     k=0
     for i in t:
         if(k<5):
-            if(i.symbol!='CNX NIFTY'):
+            if(i.symbol!='NIFTY 50'):
                 gainers.append(i)
                 k+=1
         else:
@@ -863,40 +940,43 @@ def getTopGainers():
     return gainers
 def getTopLosers():
     losers=[]
-    t=Stock_data.objects.all().order_by('change_per')
+    t=Stock_data.objects.all().order_by('change_per')[:6]                   ###########
     k=0
     for i in t:
         if(k<5):
-            if(i.symbol!='CNX NIFTY'):
+            if(i.symbol!='NIFTY 50'):
                 losers.append(i)
                 k+=1
         else:
             break
     return losers
+
 def getMostActiveVolume():
     active=[]
-    t=Stock_data.objects.all().order_by('-trade_Qty')
+    t=Stock_data.objects.all().order_by('-trade_Qty')[:6]                   ###########
     k=0
     for i in t:
         if(k<5):
-            if(i.symbol!='CNX NIFTY'):
+            if(i.symbol!='NIFTY 50'):
                 active.append(i)
                 k+=1
         else:
             break
     return active
+
 def getMostActiveValue():
     active=[]
-    t=Stock_data.objects.all().order_by('-trade_Value')
+    t=Stock_data.objects.all().order_by('-trade_Value')[:6]                 ###########
     k=0
     for i in t:
         if(k<5):
-            if(i.symbol!='CNX NIFTY'):
+            if(i.symbol!='NIFTY 50'):
                 active.append(i)
                 k+=1
         else:
             break
     return active
+
 def getRank(user_id):
     p=Portfolio.objects.all().order_by('-net_worth')
     i=1
@@ -905,10 +985,72 @@ def getRank(user_id):
             return i
         i+=1
     return 0
+
+
+def isWrongTime():
+    return False                            ##remove this
+    cclose=True
+    now = datetime.datetime.now()
+    if(now.strftime("%A")!='Sunday' and now.strftime("%A")!='Saturday'):
+        start_time=datetime.time(hour=9,minute=15,second=00)
+        end_time=datetime.time(hour=15,minute=30,second=00)
+        now = datetime.datetime.now().time()
+        if(start_time<now<end_time):
+            cclose=False
+
+    return cclose
+
+
 #=======Number=======#
 def is_number(s):
     try:
         float(s)
         return True
     except ValueError:
-        return False        
+        return False      
+
+
+
+
+########### FUNCTIONS SHARED WITH CHANNEL CONSUMER ######################
+
+
+def niftyData():
+    data=[] 
+    dat=[]
+
+    nifty= Stock_data.objects.get(symbol='NIFTY 50')
+    data = [ nifty.current_price,nifty.change ]
+
+    dat=json.dumps(data,cls=DjangoJSONEncoder)
+    
+
+    return dat
+
+
+
+
+def leaderboardData():
+    p=Portfolio.objects.all().order_by('-net_worth')
+    i=1
+    l=[]
+    for t in p:
+        u=User.objects.get(user_id=t.user_id)
+        user = {
+        'user_id':t.user_id,
+        'name': u.first_name + " "+ u.last_name,
+        'net_worth': float(t.net_worth)
+        }      
+
+        l.append(user);
+        i+=1
+
+    data=json.dumps(l,cls=DjangoJSONEncoder)
+    return data
+
+
+
+
+
+def testChannels(request):
+    return render(request,'test_channels.html',{})    
